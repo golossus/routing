@@ -19,6 +19,7 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	for i := 0; i < len(r.handlers); i++ {
 		if r.handlers[i].path == request.URL.Path {
 			r.handlers[i].handler(response, request)
+			return
 		}
 	}
 	http.NotFound(response, request)
