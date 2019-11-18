@@ -21,7 +21,7 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 			r.handlers[i].handler(response, request)
 		}
 	}
-	http.NotFoundHandler()
+	http.NotFound(response, request)
 }
 
 func (r *Router) AddHandler(path string, handler HandlerFunction) {
