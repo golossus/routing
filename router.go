@@ -1,37 +1,35 @@
 package hw14_go
 
 import (
-	"fmt"
 	"net/http"
 )
 
-func Greet() {
-	fmt.Println("Hola HW14")
-}
-
 type HandlerFunction func(http.ResponseWriter, *http.Request)
 
-
-type RouteHandler struct {
-	path string
+type routeHandler struct {
+	path    string
 	handler HandlerFunction
 }
 
 type Router struct {
-	routeHandlers []*RouteHandler
-
+	handlers []*routeHandler
 }
 
-func (r *Router) ServeHTTP(http.ResponseWriter, *http.Request) {
-	panic("implement me")
+func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	for i := 0; i < len(r.handlers); i++ {
+		if r.handlers[i].path == request.URL.Path {
+			r.handlers[i].handler(response, request)
+		}
+	}
+	http.NotFoundHandler()
 }
 
 func (r *Router) AddHandler(path string, handler HandlerFunction) {
 
-	if (r.routeHandlers == nil) {
-		r.routeHandlers = make([]*RouteHandler, 0, 10)
+	if r.handlers == nil {
+		r.handlers = make([]*routeHandler, 0, 10)
 	}
 
-	routeHandler := &RouteHandler { path: path, handler: handler }
-	r.routeHandlers = append(r.routeHandlers, routeHandler)
+	rh := &routeHandler{path: path, handler: handler}
+	r.handlers = append(r.handlers, rh)
 }
