@@ -5,15 +5,15 @@ import (
 	"testing"
 )
 
-func TestIsNilOnCreation(t *testing.T) {
-	router := Router{}
+func TestSliceIsNilOnCreation(t *testing.T) {
+	router := SliceRouter{}
 	if nil != router.handlers {
-		t.Errorf("Router is not empty on creation")
+		t.Errorf("SliceRouter is not empty on creation")
 	}
 }
 
-func TestAddOneRouteHandler(t *testing.T) {
-	router := Router{}
+func TestSliceAddOneRouteHandler(t *testing.T) {
+	router := SliceRouter{}
 	flag := false
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
@@ -21,7 +21,7 @@ func TestAddOneRouteHandler(t *testing.T) {
 	router.AddHandler("/path1", f)
 
 	if nil == router.handlers {
-		t.Errorf("Router is empty")
+		t.Errorf("SliceRouter is empty")
 	}
 
 	if "/path1" != router.handlers[0].path {
@@ -38,8 +38,8 @@ func TestAddOneRouteHandler(t *testing.T) {
 	}
 }
 
-func TestAddSeveralRoutesHandler(t *testing.T) {
-	router := Router{}
+func TestSliceAddSeveralRoutesHandler(t *testing.T) {
+	router := SliceRouter{}
 	flag := false
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
@@ -73,8 +73,97 @@ func TestAddSeveralRoutesHandler(t *testing.T) {
 	}
 }
 
-func TestRouteMatch(t *testing.T) {
-	router := Router{}
+func TestSliceRouteMatch(t *testing.T) {
+	router := SliceRouter{}
+	flag := false
+	f := func(response http.ResponseWriter, request *http.Request) {
+		flag = true
+	}
+	router.AddHandler("/path1", nil)
+	router.AddHandler("/path2", f)
+
+	request, _ := http.NewRequest("GET", "/path2", nil)
+	router.ServeHTTP(nil, request)
+
+	if !flag {
+		t.Errorf("Handler not match ")
+	}
+}
+
+func TestMapIsNilOnCreation(t *testing.T) {
+	router := MapRouter{}
+	if nil != router.handlers {
+		t.Errorf("MapRouter is not empty on creation")
+	}
+}
+
+func TestMapAddOneRouteHandler(t *testing.T) {
+	router := MapRouter{}
+	flag := false
+	f := func(response http.ResponseWriter, request *http.Request) {
+		flag = true
+	}
+	router.AddHandler("/path1", f)
+
+	if nil == router.handlers {
+		t.Errorf("MapRouter is empty")
+	}
+
+	handler, found := router.handlers["/path1"]
+	if !found {
+		t.Errorf("Path not valid")
+	}
+
+	if nil == handler {
+		t.Errorf("Handler not valid")
+	}
+
+	handler(nil, nil)
+	if !flag {
+		t.Errorf("Handler not match ")
+	}
+}
+
+func TestMapAddSeveralRoutesHandler(t *testing.T) {
+	router := MapRouter{}
+	flag := false
+	f := func(response http.ResponseWriter, request *http.Request) {
+		flag = true
+	}
+	router.AddHandler("/path1", nil)
+	router.AddHandler("/path2", f)
+
+	if 2 != len(router.handlers) {
+		t.Errorf("Invalid size")
+	}
+
+	handler, found := router.handlers["/path1"]
+	if !found {
+		t.Errorf("Path not valid")
+	}
+
+	if nil != handler {
+		t.Errorf("Handler not valid")
+	}
+
+	handler, found = router.handlers["/path2"]
+	if !found {
+		t.Errorf("Path not valid")
+	}
+
+	if nil == handler {
+		t.Errorf("Handler not valid")
+	}
+
+	handler(nil, nil)
+	if !flag {
+		t.Errorf("Handler not match ")
+	}
+
+}
+
+func TestMapRouteMatch(t *testing.T) {
+	router := MapRouter{}
 	flag := false
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true

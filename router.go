@@ -6,16 +6,20 @@ import (
 
 type HandlerFunction func(http.ResponseWriter, *http.Request)
 
+type Router interface {
+	AddHandler(string, HandlerFunction)
+}
+
 type routeHandler struct {
 	path    string
 	handler HandlerFunction
 }
 
-type Router struct {
+type SliceRouter struct {
 	handlers []*routeHandler
 }
 
-func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (r *SliceRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	for i := 0; i < len(r.handlers); i++ {
 		if r.handlers[i].path == request.URL.Path {
 			r.handlers[i].handler(response, request)
@@ -25,7 +29,7 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	http.NotFound(response, request)
 }
 
-func (r *Router) AddHandler(path string, handler HandlerFunction) {
+func (r *SliceRouter) AddHandler(path string, handler HandlerFunction) {
 
 	if r.handlers == nil {
 		r.handlers = make([]*routeHandler, 0, 10)
@@ -33,4 +37,27 @@ func (r *Router) AddHandler(path string, handler HandlerFunction) {
 
 	rh := &routeHandler{path: path, handler: handler}
 	r.handlers = append(r.handlers, rh)
+}
+
+type MapRouter struct {
+	handlers map[string]HandlerFunction
+}
+
+func (r *MapRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	handler, found := r.handlers[request.URL.Path]
+	if !found {
+		http.NotFound(response, request)
+		return
+	}
+
+	handler(response, request)
+}
+
+func (r *MapRouter) AddHandler(path string, handler HandlerFunction) {
+
+	if r.handlers == nil {
+		r.handlers = make(map[string]HandlerFunction)
+	}
+
+	r.handlers[path] = handler
 }
