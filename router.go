@@ -7,6 +7,7 @@ import (
 type HandlerFunction func(http.ResponseWriter, *http.Request)
 
 type Router interface {
+	http.Handler
 	AddHandler(string, HandlerFunction)
 }
 
