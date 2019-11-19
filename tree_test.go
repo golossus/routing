@@ -27,7 +27,6 @@ func TestInsertChild(t *testing.T) {
 		t.Errorf("")
 	}
 }
-
 func TestInsertSibling(t *testing.T) {
 	tree := Tree{}
 	tree.Insert("/path1", nil)
@@ -44,6 +43,21 @@ func TestInsertSibling(t *testing.T) {
 	if "2" != tree.root.child.sibling.prefix {
 		t.Errorf("")
 	}
+}
+
+func TestInsertSiblingNoCommon(t *testing.T) {
+	tree := Tree{}
+	tree.Insert("/path1", nil)
+	tree.Insert("path2", nil)
+
+	if "/path1" != tree.root.prefix {
+		t.Errorf("")
+	}
+
+	if "path2" != tree.root.sibling.prefix {
+		t.Errorf("")
+	}
+
 }
 
 func TestInsertChildOnSibling(t *testing.T) {
@@ -92,7 +106,10 @@ func TestInsertSiblingOnSibling(t *testing.T) {
 	}
 }
 
-func TestHandler(t *testing.T) {
+var testTree Tree
+var flag *string
+
+func TestInsertWithHandler(t *testing.T) {
 	tree := Tree{}
 	handler1, flag1 := generateHandler("/path1")
 	handler2, _ := generateHandler("/path2")
@@ -139,6 +156,27 @@ func TestHandler(t *testing.T) {
 		t.Errorf("")
 	}
 
+}
+
+func TestFindHandler(t *testing.T) {
+	tree := Tree{}
+	handler1, _ := generateHandler("/path1")
+	handler2, _ := generateHandler("/path2")
+	handler3, _ := generateHandler("/path3")
+	handler4, flag4 := generateHandler("/path3/path4")
+	handler5, _ := generateHandler("/path5/path4")
+	tree.Insert("/path1", handler1)
+	tree.Insert("/path2", handler2)
+	tree.Insert("/path3", handler3)
+	tree.Insert("/path3/path4", handler4)
+	tree.Insert("/path5/path4", handler5)
+
+	handler := tree.Find("/path3/path4")
+	handler(nil,nil)
+
+	if *flag4 != "/path3/path4" {
+		t.Errorf("")
+	}
 }
 
 func generateHandler(path string) (HandlerFunction, *string) {

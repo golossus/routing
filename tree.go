@@ -8,6 +8,28 @@ func (t *Tree) Insert(path string, handler HandlerFunction) {
 	t.root = insert(t.root, path, handler)
 }
 
+func (t *Tree) Find(path string) HandlerFunction {
+	n := t.root
+	p := path
+
+	for nil != n && len(p) > 0 {
+		pos := common(p, n.prefix)
+		if pos == 0 {
+			n = n.sibling
+			continue
+		}
+
+		if pos == len(p) {
+			return n.handler
+		}
+
+		p = p[pos:]
+		n = n.child
+	}
+
+	return nil
+}
+
 type Node struct {
 	prefix  string
 	handler HandlerFunction
