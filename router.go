@@ -61,3 +61,21 @@ func (r *MapRouter) AddHandler(path string, handler HandlerFunction) {
 
 	r.handlers[path] = handler
 }
+
+type PrefixTreeRouter struct {
+	tree Tree
+}
+
+func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	handler := r.tree.Find(request.URL.Path)
+	if handler == nil {
+		http.NotFound(response, request)
+		return
+	}
+
+	handler(response, request)
+}
+
+func (r *PrefixTreeRouter) AddHandler(path string, handler HandlerFunction) {
+	r.tree.Insert(path, handler)
+}

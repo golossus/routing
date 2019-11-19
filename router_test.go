@@ -178,3 +178,21 @@ func TestMapRouteMatch(t *testing.T) {
 		t.Errorf("Handler not match ")
 	}
 }
+
+func TestPrefixTreeRouter(t *testing.T) {
+	router := PrefixTreeRouter{}
+
+	flag := false
+	f := func(response http.ResponseWriter, request *http.Request) {
+		flag = true
+	}
+	router.AddHandler("/path1", nil)
+	router.AddHandler("/path2", f)
+
+	request, _ := http.NewRequest("GET", "/path2", nil)
+	router.ServeHTTP(nil, request)
+
+	if !flag {
+		t.Errorf("Handler not match ")
+	}
+}
