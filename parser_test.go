@@ -210,3 +210,64 @@ func validateTokens(expectedTokens, tokens []token, t *testing.T) {
 		}
 	}
 }
+
+func TestParserValidatesValidPaths (t *testing.T){
+	paths := []string{
+		"/",
+		"/path1",
+		"/path1/path2",
+		"/path1/path2/",
+		"/path1/{id}",
+		"/path1/{id}/",
+		"/path1/{id}/path2",
+		"/{id}",
+		"/{id}/",
+		"/{id}/path1",
+		"/asdf-{id}",
+		"/{id}-adfasf",
+		"/{id}/{name}",
+		"/{id}/{name}/",
+		"/{id}-{name}/",
+	}
+
+	for _, path := range paths {
+		parser:= NewParser(path)
+		valid, err := parser.parse()
+		if !valid {
+			t.Errorf("%v in path %v", err, path)
+		}
+	}
+}
+
+func TestParserDoesNotValidateInvalidPaths (t *testing.T){
+	paths := []string{
+		"",
+		"//",
+		"/path1//path2",
+		"/path1//",
+		"path1/path2/",
+		"/path1/{id}}",
+		"/path1/{{id}",
+		"/path1/id}",
+		"/path1/{id",
+		"/path1/{id{",
+		"/path1/{id/",
+		"/path1/{}",
+		"/path1/{id}{name}",
+		"/{}",
+		"/{",
+		"/}",
+		"/{name{id}}",
+		"/{id$}",
+		"/{.id}",
+		"/{id/name}",
+	}
+
+	for _, path := range paths {
+		parser:= NewParser(path)
+		valid, _ := parser.parse()
+		if valid {
+			t.Errorf("Validated invalid path %v", path)
+		}
+	}
+}
