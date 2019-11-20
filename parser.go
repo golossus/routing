@@ -1,5 +1,10 @@
 package hw14_go
 
+import (
+	"bufio"
+	"strings"
+)
+
 const (
 	TSlash = iota
 	TStatic
@@ -41,4 +46,13 @@ func createFinishVarToken(value string) token {
 
 func createEndToken() token {
 	return token{t: TEnd, v: ""}
+}
+
+type Lexer struct {
+	buf *bufio.Reader
+}
+
+func NewLexer(path string) *Lexer {
+	reader := strings.NewReader(path)
+	return Lexer{buf: bufio.Reader{rd: reader}}
 }
