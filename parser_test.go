@@ -1,6 +1,9 @@
 package hw14_go
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestSimplePath(t *testing.T) {
 	lexer := NewLexer("/path1")
@@ -211,7 +214,7 @@ func validateTokens(expectedTokens, tokens []token, t *testing.T) {
 	}
 }
 
-func TestParserValidatesValidPaths (t *testing.T){
+func TestParserValidatesValidPaths(t *testing.T) {
 	paths := []string{
 		"/",
 		"/path1",
@@ -231,7 +234,7 @@ func TestParserValidatesValidPaths (t *testing.T){
 	}
 
 	for _, path := range paths {
-		parser:= NewParser(path)
+		parser := NewParser(path)
 		valid, err := parser.parse()
 		if !valid {
 			t.Errorf("%v in path %v", err, path)
@@ -239,7 +242,7 @@ func TestParserValidatesValidPaths (t *testing.T){
 	}
 }
 
-func TestParserDoesNotValidateInvalidPaths (t *testing.T){
+func TestParserDoesNotValidateInvalidPaths(t *testing.T) {
 	paths := []string{
 		"",
 		"//",
@@ -264,10 +267,59 @@ func TestParserDoesNotValidateInvalidPaths (t *testing.T){
 	}
 
 	for _, path := range paths {
-		parser:= NewParser(path)
+		parser := NewParser(path)
 		valid, _ := parser.parse()
 		if valid {
 			t.Errorf("Validated invalid path %v", path)
+		}
+	}
+}
+
+func TestParserChechChunks(t *testing.T) {
+	paths := []string{
+		"/",
+		"/path1",
+		"/path1/path2",
+		"/path1/path2/",
+		"/path1/{id}",
+		"/path1/{id}/",
+		"/path1/{id}/path2",
+		"/{id}",
+		"/{id}/",
+		"/{id}/path1",
+		"/asdf-{id}",
+		"/{id}-adfasf",
+		"/{id}/{name}",
+		"/{id}/{name}/",
+		"/{id}-{name}/",
+	}
+
+	expectedChunks := []string{
+		"[{0 /}]",
+		"[{0 /path1}]",
+		"[{0 /path1/path2}]",
+		"[{0 /path1/path2/}]",
+		"[{0 /path1/} {1 id}]",
+		"[{0 /path1/} {1 id} {0 /}]",
+		"[{0 /path1/} {1 id} {0 /path2}]",
+		"[{0 /} {1 id}]",
+		"[{0 /} {1 id} {0 /}]",
+		"[{0 /} {1 id} {0 /path1}]",
+		"[{0 /asdf-} {1 id}]",
+		"[{0 /} {1 id} {0 -adfasf}]",
+		"[{0 /} {1 id} {0 /} {1 name}]",
+		"[{0 /} {1 id} {0 /} {1 name} {0 /}]",
+		"[{0 /} {1 id} {0 -} {1 name} {0 /}]",
+	}
+
+	for index, path := range paths {
+		parser := NewParser(path)
+		valid, err := parser.parse()
+		if !valid {
+			t.Errorf("%v in path %v", err, path)
+		}
+		if expectedChunks[index] != fmt.Sprintf("%v", parser.chunks) {
+			t.Errorf("Parser error, Invalid chunk %v for path %v", parser.chunks, path)
 		}
 	}
 }

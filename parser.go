@@ -21,57 +21,14 @@ const (
 	TModeIdentifier
 )
 
+const (
+	TChunkStatic = iota
+	TChunkDynamic
+)
+
 type token struct {
 	v string
 	t int
-}
-
-func createSlashToken() token {
-	return token{t: TSlash, v: "/"}
-}
-
-func createStaticToken(value string) token {
-	return token{t: TStatic, v: value}
-}
-
-func createOpenVarToken() token {
-	return token{t: TOpenVar, v: "{"}
-}
-
-func createVarToken(value string) token {
-	return token{t: TVar, v: value}
-}
-
-func createCloseVarToken() token {
-	return token{t: TCloseVar, v: "}"}
-}
-
-func createEndToken() token {
-	return token{t: TEnd, v: ""}
-}
-
-func isSlash(ch rune) bool {
-	return '/' == ch
-}
-
-func isOpenBrace(ch rune) bool {
-	return '{' == ch
-}
-
-func isCloseBrace(ch rune) bool {
-	return '}' == ch
-}
-
-func isAlpha(ch rune) bool {
-	return (ch >= 'a' && ch <= 'z') ||
-		(ch >= 'A' && ch <= 'Z') ||
-		(ch >= '0' && ch <= '9')
-}
-func isStatic(ch rune) bool {
-	return isAlpha(ch) ||
-		(ch == '.') ||
-		(ch == '-') ||
-		(ch == '_')
 }
 
 type Lexer struct {
@@ -173,14 +130,163 @@ func (l *Lexer) scanAll() []token {
 }
 
 type Parser struct {
-	lexer *Lexer
-	last  token
+	lexer  *Lexer
+	last   token
+	chunks []chunk
+	buf    bytes.Buffer
+}
+
+type chunk struct {
+	t int
+	v string
 }
 
 func NewParser(path string) *Parser {
 	l := NewLexer(path)
 
-	return &Parser{lexer: l}
+	return &Parser{lexer: l, chunks: make([]chunk, 0, 3)}
+}
+
+func (p *Parser) parse() (bool, error) {
+	return p.parseStart()
+}
+
+func (p *Parser) parseStart() (bool, error) {
+	token := p.lexer.scan()
+	if !isSlashToken(token) {
+		return false, fmt.Errorf("Parser error, expected %s but got %s", "/", token.v)
+	}
+	p.buf.Write([]byte(token.v))
+
+	token = p.lexer.scan()
+	p.last = token
+	switch {
+	case isOpenVarToken(token):
+		p.chunks = append(p.chunks, chunk{t: TChunkStatic, v: p.buf.String()})
+		p.buf.Reset()
+		return p.parseVar()
+	case isEndToken(token):
+		p.chunks = append(p.chunks, chunk{t: TChunkStatic, v: p.buf.String()})
+		p.buf.Reset()
+		return true, nil
+	case isSlashToken(token) || isCloseVarToken(token):
+		return false, fmt.Errorf("Parser error, expected %s but got %s", "alphanum", token.v)
+	}
+
+	p.buf.Write([]byte(token.v))
+	return p.parseStatic()
+}
+
+func (p *Parser) parseVar() (bool, error) {
+	token := p.lexer.scan()
+
+	if !isVarToken(token) {
+		return false, fmt.Errorf("Parser error, expected %s but got %s", "var identifier", token.v)
+	}
+	p.buf.Write([]byte(token.v))
+
+	token = p.lexer.scan()
+	if !isCloseVarToken(token) {
+		return false, fmt.Errorf("Parser error, expected %s but got %s", "}", token.v)
+	}
+	p.chunks = append(p.chunks, chunk{t: TChunkDynamic, v: p.buf.String()})
+	p.buf.Reset()
+	token = p.lexer.scan()
+	if isEndToken(token) {
+		return true, nil
+	}
+	if isOpenVarToken(token) || isCloseVarToken(token) {
+		return false, fmt.Errorf("Parser error, expected %s but got %s", "static", token.v)
+	}
+
+	p.buf.Write([]byte(token.v))
+
+	p.last = token
+	return p.parseStatic()
+
+}
+
+func (p *Parser) parseStatic() (bool, error) {
+	token := p.lexer.scan()
+
+	if isEndToken(token) {
+		p.chunks = append(p.chunks, chunk{t: TChunkStatic, v: p.buf.String()})
+		p.buf.Reset()
+		return true, nil
+	}
+
+	if isSlashToken(token) && isSlashToken(p.last) {
+		return false, fmt.Errorf("Parser error, unexpected %v", token.v)
+	}
+
+	if isSlashToken(token) || isStaticToken(token) {
+		p.buf.Write([]byte(token.v))
+
+		p.last = token
+		return p.parseStatic()
+	}
+
+	if isCloseVarToken(token) {
+		return false, fmt.Errorf("Parser error, expected %s but got %s", "}", token.v)
+	}
+
+	if isOpenVarToken(token) {
+		p.chunks = append(p.chunks, chunk{t: TChunkStatic, v: p.buf.String()})
+		p.buf.Reset()
+
+		p.last = token
+		return p.parseVar()
+	}
+
+	return false, fmt.Errorf("Parser error, unexpected token %s", token.v)
+}
+
+func createSlashToken() token {
+	return token{t: TSlash, v: "/"}
+}
+
+func createStaticToken(value string) token {
+	return token{t: TStatic, v: value}
+}
+
+func createOpenVarToken() token {
+	return token{t: TOpenVar, v: "{"}
+}
+
+func createVarToken(value string) token {
+	return token{t: TVar, v: value}
+}
+
+func createCloseVarToken() token {
+	return token{t: TCloseVar, v: "}"}
+}
+
+func createEndToken() token {
+	return token{t: TEnd, v: ""}
+}
+
+func isSlash(ch rune) bool {
+	return '/' == ch
+}
+
+func isOpenBrace(ch rune) bool {
+	return '{' == ch
+}
+
+func isCloseBrace(ch rune) bool {
+	return '}' == ch
+}
+
+func isAlpha(ch rune) bool {
+	return (ch >= 'a' && ch <= 'z') ||
+		(ch >= 'A' && ch <= 'Z') ||
+		(ch >= '0' && ch <= '9')
+}
+func isStatic(ch rune) bool {
+	return isAlpha(ch) ||
+		(ch == '.') ||
+		(ch == '-') ||
+		(ch == '_')
 }
 
 func isSlashToken(t token) bool {
@@ -205,85 +311,4 @@ func isEndToken(t token) bool {
 
 func isStaticToken(t token) bool {
 	return t.t == TStatic
-}
-
-//By now we only validate the path with the parser. In the
-//future the goal is to return a list of things to use with
-//the router.
-func (p *Parser) parse() (bool, error) {
-	return p.parseStart()
-}
-
-func (p *Parser) parseStart() (bool, error) {
-	token := p.lexer.scan()
-	if !isSlashToken(token) {
-		return false, fmt.Errorf("Parser error, expected %s but got %s", "/", token.v)
-	}
-
-	token = p.lexer.scan()
-	p.last = token
-	switch {
-	case isOpenVarToken(token):
-		return p.parseVar()
-	case isEndToken(token):
-		return true, nil
-	case isSlashToken(token) || isCloseVarToken(token):
-		return false, fmt.Errorf("Parser error, expected %s but got %s", "alphanum", token.v)
-	}
-
-	return p.parseStatic()
-}
-
-func (p *Parser) parseVar() (bool, error) {
-	token := p.lexer.scan()
-
-	if !isVarToken(token) {
-		return false, fmt.Errorf("Parser error, expected %s but got %s", "var identifier", token.v)
-	}
-
-	token = p.lexer.scan()
-	if !isCloseVarToken(token) {
-		return false, fmt.Errorf("Parser error, expected %s but got %s", "}", token.v)
-	}
-
-	token = p.lexer.scan()
-	if isEndToken(token) {
-		return true, nil
-	}
-	if isOpenVarToken(token) || isCloseVarToken(token) {
-		return false, fmt.Errorf("Parser error, expected %s but got %s", "static", token.v)
-	}
-
-	p.last = token
-
-	return p.parseStatic()
-
-}
-
-func (p *Parser) parseStatic() (bool, error) {
-	token := p.lexer.scan()
-
-	if isEndToken(token) {
-		return true, nil
-	}
-
-	if isSlashToken(token) && isSlashToken(p.last) {
-		return false, fmt.Errorf("Parser error, unexpected %v", token.v)
-	}
-
-	if isSlashToken(token) || isStaticToken(token) {
-		p.last = token
-		return p.parseStatic()
-	}
-
-	if isCloseVarToken(token) {
-		return false, fmt.Errorf("Parser error, expected %s but got %s", "}", token.v)
-	}
-
-	if isOpenVarToken(token) {
-		p.last = token
-		return p.parseVar()
-	}
-
-	return false, fmt.Errorf("Parser error, unexpected token %s", token.v)
 }
