@@ -19,8 +19,8 @@ const (
 const (
 	TModeStatic = iota
 	TModeIdentifier
+	TModeCloseIdentifier
 )
-
 
 type token struct {
 	v string
@@ -55,7 +55,6 @@ func createEndToken() token {
 	return token{t: TEnd, v: ""}
 }
 
-
 func isSlash(ch rune) bool {
 	return '/' == ch
 }
@@ -82,7 +81,7 @@ func isStatic(ch rune) bool {
 
 type Lexer struct {
 	mode int
-	buf *bufio.Reader
+	buf  *bufio.Reader
 }
 
 func NewLexer(path string) *Lexer {
@@ -98,14 +97,16 @@ func (l *Lexer) scan() token {
 	}
 
 	if l.mode == TModeIdentifier {
+		l.mode = TModeStatic
 
-		if (isCloseBrace(ch)) {
-			l.mode = TModeStatic
-			return createCloseVarToken()
+		if isAlpha(ch) {
+			l.buf.UnreadRune()
+			return l.scanIdentifier()
 		}
+	}
 
-		return l.scanIdentifier()
-
+	if isCloseBrace(ch) {
+		return createCloseVarToken()
 	}
 
 	// defaults to Static mode
@@ -118,9 +119,8 @@ func (l *Lexer) scan() token {
 		l.mode = TModeIdentifier
 		return createOpenVarToken()
 	}
-
+	l.buf.UnreadRune()
 	return l.scanStatic()
-
 }
 
 func (l *Lexer) scanStatic() token {
@@ -158,12 +158,21 @@ func (l *Lexer) scanIdentifier() token {
 			l.buf.UnreadRune()
 			break
 		}
-
-		// is valid
-
 		out.WriteRune(ch)
 	}
 
 	return createVarToken(out.String())
 }
 
+func (l *Lexer) scanAll() []token {
+
+	tokens := make([]token, 0, 10)
+	for {
+		token := l.scan()
+		tokens = append(tokens, token)
+		if TEnd == token.t {
+			break
+		}
+	}
+	return tokens
+}
