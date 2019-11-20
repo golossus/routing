@@ -5,13 +5,28 @@ type Tree struct {
 }
 
 func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
-	var leaf *Node
+	leaf := &Node{}
 
-	t.root = insert(t.root, chunks[0].v, handler, leaf)
+	h := handler
+	if len(chunks) > 1 {
+		h = nil
+	}
 
-	for _, chunk := range chunks[1:] {
+	t.root = insert(t.root, chunks[0].v, h, leaf)
+
+	chunks = chunks[1:]
+	for index, chunk := range chunks {
+		if index == len(chunks)-1 {
+			h = handler
+		}
 		next := leaf
-		insert(next, chunk.v, handler, leaf)
+
+		if chunk.t == TChunkStatic {
+			insert(next, chunk.v, h, leaf)
+			continue
+		}
+
+		insertDynamic(next, chunk.v, h, leaf)
 	}
 
 }
@@ -43,6 +58,8 @@ type Node struct {
 	handler HandlerFunction
 	child   *Node
 	sibling *Node
+	t       int
+	ident   string
 }
 
 func insert(n *Node, path string, handler HandlerFunction, leaf *Node) *Node {
@@ -56,7 +73,7 @@ func insert(n *Node, path string, handler HandlerFunction, leaf *Node) *Node {
 
 	if pos == len(path) {
 		n.handler = handler
-		leaf = n
+		*leaf = *n
 		return n
 	}
 
@@ -74,6 +91,34 @@ func insert(n *Node, path string, handler HandlerFunction, leaf *Node) *Node {
 	n.child = insert(n.child, path[pos:], handler, leaf)
 
 	return n
+}
+
+func insertDynamic(n *Node, ident string, handler HandlerFunction, leaf *Node) *Node {
+
+	if n.child == nil {
+		n.child = &Node{ident: ident, t: 1, handler: handler}
+		leaf = n.child
+	}
+
+	tmp := n.child
+
+	for {
+		if tmp.t == 1 && tmp.ident == ident {
+			if tmp.handler == nil {
+				tmp.handler = handler
+			}
+			leaf = tmp
+			return n
+		}
+
+		if tmp.sibling == nil {
+			tmp.sibling = &Node{ident: ident, t: 1, handler: handler}
+			leaf = tmp.sibling
+			return n
+		}
+
+		tmp = tmp.sibling
+	}
 }
 
 func common(s1, s2 string) int {
