@@ -4,9 +4,16 @@ type Tree struct {
 	root *Node
 }
 
-func (t *Tree) Insert(path string, handler HandlerFunction) {
+func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
 	var leaf *Node
-	t.root = insert(t.root, path, handler, leaf)
+
+	t.root = insert(t.root, chunks[0].v, handler, leaf)
+
+	for _, chunk := range chunks[1:] {
+		next := leaf
+		insert(next, chunk.v, handler, leaf)
+	}
+
 }
 
 func (t *Tree) Find(path string) HandlerFunction {

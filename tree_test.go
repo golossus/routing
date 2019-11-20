@@ -5,9 +5,15 @@ import (
 	"testing"
 )
 
+func generateChunk(path string) []chunk {
+	return []chunk{
+		{v: path},
+	}
+}
+
 func TestInsertOnEmptyTree(t *testing.T) {
 	tree := Tree{}
-	tree.Insert("/path1", nil)
+	tree.Insert(generateChunk("/path1"), nil)
 
 	if "/path1" != tree.root.prefix {
 		t.Errorf("")
@@ -16,8 +22,8 @@ func TestInsertOnEmptyTree(t *testing.T) {
 
 func TestInsertChild(t *testing.T) {
 	tree := Tree{}
-	tree.Insert("/path1", nil)
-	tree.Insert("/path1/path2", nil)
+	tree.Insert(generateChunk("/path1"), nil)
+	tree.Insert(generateChunk("/path1/path2"), nil)
 
 	if "/path1" != tree.root.prefix {
 		t.Errorf("")
@@ -29,8 +35,8 @@ func TestInsertChild(t *testing.T) {
 }
 func TestInsertSibling(t *testing.T) {
 	tree := Tree{}
-	tree.Insert("/path1", nil)
-	tree.Insert("/path2", nil)
+	tree.Insert(generateChunk("/path1"), nil)
+	tree.Insert(generateChunk("/path2"), nil)
 
 	if "/path" != tree.root.prefix {
 		t.Errorf("")
@@ -47,8 +53,8 @@ func TestInsertSibling(t *testing.T) {
 
 func TestInsertSiblingNoCommon(t *testing.T) {
 	tree := Tree{}
-	tree.Insert("/path1", nil)
-	tree.Insert("path2", nil)
+	tree.Insert(generateChunk("/path1"), nil)
+	tree.Insert(generateChunk("path2"), nil)
 
 	if "/path1" != tree.root.prefix {
 		t.Errorf("")
@@ -62,9 +68,9 @@ func TestInsertSiblingNoCommon(t *testing.T) {
 
 func TestInsertChildOnSibling(t *testing.T) {
 	tree := Tree{}
-	tree.Insert("/path1", nil)
-	tree.Insert("/path2", nil)
-	tree.Insert("/path1/path3", nil)
+	tree.Insert(generateChunk("/path1"), nil)
+	tree.Insert(generateChunk("/path2"), nil)
+	tree.Insert(generateChunk("/path1/path3"), nil)
 
 	if "/path" != tree.root.prefix {
 		t.Errorf("")
@@ -85,9 +91,9 @@ func TestInsertChildOnSibling(t *testing.T) {
 
 func TestInsertSiblingOnSibling(t *testing.T) {
 	tree := Tree{}
-	tree.Insert("/path1", nil)
-	tree.Insert("/path2", nil)
-	tree.Insert("/path3", nil)
+	tree.Insert(generateChunk("/path1"), nil)
+	tree.Insert(generateChunk("/path2"), nil)
+	tree.Insert(generateChunk("/path3"), nil)
 
 	if "/path" != tree.root.prefix {
 		t.Errorf("")
@@ -116,11 +122,11 @@ func TestInsertWithHandler(t *testing.T) {
 	handler3, _ := generateHandler("/path3")
 	handler4, flag4 := generateHandler("/path3/path4")
 	handler5, _ := generateHandler("/path5/path4")
-	tree.Insert("/path1", handler1)
-	tree.Insert("/path2", handler2)
-	tree.Insert("/path3", handler3)
-	tree.Insert("/path3/path4", handler4)
-	tree.Insert("/path5/path4", handler5)
+	tree.Insert(generateChunk("/path1"), handler1)
+	tree.Insert(generateChunk("/path2"), handler2)
+	tree.Insert(generateChunk("/path3"), handler3)
+	tree.Insert(generateChunk("/path3/path4"), handler4)
+	tree.Insert(generateChunk("/path4/path5"), handler5)
 
 	if nil != tree.root.handler {
 		t.Errorf("")
@@ -165,14 +171,14 @@ func TestFindHandler(t *testing.T) {
 	handler3, _ := generateHandler("/path3")
 	handler4, flag4 := generateHandler("/path3/path4")
 	handler5, _ := generateHandler("/path5/path4")
-	tree.Insert("/path1", handler1)
-	tree.Insert("/path2", handler2)
-	tree.Insert("/path3", handler3)
-	tree.Insert("/path3/path4", handler4)
-	tree.Insert("/path5/path4", handler5)
+	tree.Insert(generateChunk("/path1"), handler1)
+	tree.Insert(generateChunk("/path2"), handler2)
+	tree.Insert(generateChunk("/path3"), handler3)
+	tree.Insert(generateChunk("/path3/path4"), handler4)
+	tree.Insert(generateChunk("/path4/path5"), handler5)
 
 	handler := tree.Find("/path3/path4")
-	handler(nil,nil)
+	handler(nil, nil)
 
 	if *flag4 != "/path3/path4" {
 		t.Errorf("")

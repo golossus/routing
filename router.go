@@ -79,10 +79,9 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 
 func (r *PrefixTreeRouter) AddHandler(path string, handler HandlerFunction) {
 	parser := NewParser(path)
-	_, err := parser.parse();
+	_, err := parser.parse()
 	if err != nil {
 		panic(err)
 	}
-
-	r.tree.Insert(path, handler)
+	r.tree.Insert(parser.chunks, handler)
 }
