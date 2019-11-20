@@ -5,7 +5,8 @@ type Tree struct {
 }
 
 func (t *Tree) Insert(path string, handler HandlerFunction) {
-	t.root = insert(t.root, path, handler)
+	var leaf *Node
+	t.root = insert(t.root, path, handler, leaf)
 }
 
 func (t *Tree) Find(path string) HandlerFunction {
@@ -37,21 +38,23 @@ type Node struct {
 	sibling *Node
 }
 
-func insert(n *Node, path string, handler HandlerFunction) *Node {
+func insert(n *Node, path string, handler HandlerFunction, leaf *Node) *Node {
 
 	if nil == n {
-		return &Node{prefix: path, handler: handler}
+		leaf = &Node{prefix: path, handler: handler}
+		return leaf
 	}
 
 	pos := common(n.prefix, path)
 
 	if pos == len(path) {
 		n.handler = handler
+		leaf = n
 		return n
 	}
 
 	if pos == 0 {
-		n.sibling = insert(n.sibling, path, handler)
+		n.sibling = insert(n.sibling, path, handler, leaf)
 		return n
 	}
 
@@ -59,10 +62,9 @@ func insert(n *Node, path string, handler HandlerFunction) *Node {
 		newNode := &Node{prefix: n.prefix[0:pos], child: n}
 		n.prefix = n.prefix[pos:]
 		n = newNode
-
 	}
 
-	n.child = insert(n.child, path[pos:], handler)
+	n.child = insert(n.child, path[pos:], handler, leaf)
 
 	return n
 }
