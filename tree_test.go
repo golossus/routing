@@ -44,7 +44,7 @@ func TestInsertChild(t *testing.T) {
 
 func TestInsertDynamicChild(t *testing.T) {
 
-	h:= func(res http.ResponseWriter, req *http.Request) {}
+	h := func(res http.ResponseWriter, req *http.Request) {}
 
 	tree := Tree{}
 	tree.Insert(generateStaticChunk("/path1/"), nil)
@@ -63,18 +63,11 @@ func TestInsertDynamicChild(t *testing.T) {
 	if NodeTypeDynamic != tree.root.child.t {
 		t.Errorf("")
 	}
-
-	_, ok := tree.root.child.stops[""]
-
-	if !ok {
-		t.Errorf("")
-	}
-
 }
 
 func TestInsertDynamicChildHasNoHandler(t *testing.T) {
 
-	h:= func(res http.ResponseWriter, req *http.Request) {}
+	h := func(res http.ResponseWriter, req *http.Request) {}
 
 	tree := Tree{}
 	tree.Insert(generateStaticChunk("/path1/"), nil)
@@ -94,14 +87,7 @@ func TestInsertDynamicChildHasNoHandler(t *testing.T) {
 		t.Errorf("")
 	}
 
-	_, ok := tree.root.child.stops[""]
-
-	if ok {
-		t.Errorf("")
-	}
-
-	var child *Node
-	child, ok = tree.root.child.stops["/"]
+	child, ok := tree.root.child.stops["/"]
 
 	if !ok {
 		t.Errorf("")
@@ -119,7 +105,7 @@ func TestInsertDynamicChildHasNoHandler(t *testing.T) {
 
 func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 
-	h:= func(res http.ResponseWriter, req *http.Request) {}
+	h := func(res http.ResponseWriter, req *http.Request) {}
 
 	tree := Tree{}
 	tree.Insert(generateStaticChunk("/path1/"), nil)
@@ -455,6 +441,78 @@ func TestFindHandler(t *testing.T) {
 	if *flag4 != "/path3/path4" {
 		t.Errorf("")
 	}
+}
+
+type findResult struct {
+	path   string
+	ok     bool
+	f      *string
+	schema string
+}
+
+func TestFindHandlerWithDynamic(t *testing.T) {
+	tree := Tree{}
+	handler1, flag1 := generateHandler("/path1/{id}")
+	handler2, flag2 := generateHandler("/path1/{id}/path2")
+	handler3, flag3 := generateHandler("/path1/{id}-path2")
+	handler4, _ := generateHandler("/path1/{name}")
+	handler5, flag5 := generateHandler("/path1/{name}_path2")
+	handler6, flag6 := generateHandler("/{date}")
+	handler7, flag7 := generateHandler("/path3/{slug}")
+	parser := NewParser("/path1/{id}")
+	parser.parse()
+	tree.Insert(parser.chunks, handler1)
+	parser = NewParser("/path1/{id}/path2")
+	parser.parse()
+	tree.Insert(parser.chunks, handler2)
+	parser = NewParser("/path1/{id}-path2")
+	parser.parse()
+	tree.Insert(parser.chunks, handler3)
+	parser = NewParser("/path1/{name}")
+	parser.parse()
+	tree.Insert(parser.chunks, handler4)
+	parser = NewParser("/path1/{name}_path2")
+	parser.parse()
+	tree.Insert(parser.chunks, handler5)
+	parser = NewParser("/{date}")
+	parser.parse()
+	tree.Insert(parser.chunks, handler6)
+	parser = NewParser("/path3/{slug}")
+	parser.parse()
+	tree.Insert(parser.chunks, handler7)
+
+	data := []findResult{
+		{path: "/path1/123", ok: true, f: flag1, schema:"/path1/{id}"},
+		{path: "/path1/123/", ok: false, f: nil},
+		{path: "/path1/123/path2", ok: true, f: flag2, schema:"/path1/{id}/path2"},
+		{path: "/path1/123-path2", ok: true, f: flag3, schema:"/path1/{id}-path2"},
+		{path: "/path1/pepe", ok: true, f: flag1, schema:"/path1/{id}"},
+		{path: "/path1/pepe_path2", ok: true, f: flag5, schema:"/path1/{name}_path2"},
+		{path: "/path1", ok: true, f: flag6, schema:"/{date}"},
+		{path: "/path3/123", ok: true, f: flag7, schema:"/path3/{slug}"},
+		{path: "/path3/123/asdf", ok: true, f: flag7, schema:"/path3/{slug}"},
+		{path: "/path4/", ok: true, f: flag6, schema:"/{date}"},
+		{path: "/", ok: false, f: nil},
+	}
+
+	for _, item := range data {
+		handler := tree.Find(item.path)
+		if handler != nil {
+			if item.ok == false {
+				t.Errorf("")
+			}
+
+			handler(nil, nil)
+			if *item.f != item.schema {
+				t.Errorf("")
+			}
+		} else {
+			if item.ok == true {
+				t.Errorf("")
+			}
+		}
+	}
+
 }
 
 func generateHandler(path string) (HandlerFunction, *string) {
