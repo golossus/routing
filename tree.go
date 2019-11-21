@@ -62,6 +62,7 @@ type Node struct {
 	child   *Node
 	sibling *Node
 	t       int
+	stops   map[string] *Node
 }
 
 func insert(n *Node, path string, handler HandlerFunction) (root, leaf *Node) {
@@ -75,9 +76,11 @@ func insert(n *Node, path string, handler HandlerFunction) (root, leaf *Node) {
 		if n.child == nil {
 			n.child = &Node{prefix: path, t: NodeTypeStatic, handler: handler}
 			leaf = n.child
+			n.stops[path[0:1]] = leaf
 			return n, leaf
 		}
 		n.child, leaf = insert(n.child, path, handler)
+		n.stops[path[0:1]] = leaf
 		return n, leaf
 	}
 
@@ -107,8 +110,12 @@ func insert(n *Node, path string, handler HandlerFunction) (root, leaf *Node) {
 func insertDynamic(n *Node, ident string, handler HandlerFunction) (root, leaf *Node) {
 
 	if n.child == nil {
-		n.child = &Node{prefix: ident, t: NodeTypeDynamic, handler: handler}
+		stops := make(map[string] *Node)
+		n.child = &Node{prefix: ident, t: NodeTypeDynamic, handler: handler, stops: stops}
 		leaf = n.child
+		if handler != nil {
+			leaf.stops[""] = leaf
+		}
 	}
 
 	tmp := n.child
@@ -119,12 +126,18 @@ func insertDynamic(n *Node, ident string, handler HandlerFunction) (root, leaf *
 				tmp.handler = handler
 			}
 			leaf = tmp
+			if handler != nil {
+				leaf.stops[""] = leaf
+			}
 			return n, leaf
 		}
 
 		if tmp.sibling == nil {
 			tmp.sibling = &Node{prefix: ident, t: NodeTypeDynamic, handler: handler}
 			leaf = tmp.sibling
+			if handler != nil {
+				leaf.stops[""] = leaf
+			}
 			return n, leaf
 		}
 
