@@ -50,8 +50,14 @@ func TestInsertDynamicChild(t *testing.T) {
 	if "/path1" != tree.root.prefix {
 		t.Errorf("")
 	}
+	if NodeTypeStatic != tree.root.t {
+		t.Errorf("")
+	}
 
-	if "id" != tree.root.child.ident {
+	if "id" != tree.root.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeDynamic != tree.root.child.t {
 		t.Errorf("")
 	}
 }

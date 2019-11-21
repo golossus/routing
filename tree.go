@@ -1,19 +1,22 @@
 package hw14_go
 
+const (
+	NodeTypeStatic = iota
+	NodeTypeDynamic
+)
+
 type Tree struct {
 	root *Node
 }
 
 func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
-	leaf := &Node{}
-
+	var leaf *Node
 	h := handler
 	if len(chunks) > 1 {
 		h = nil
 	}
 
-	t.root = insert(t.root, chunks[0].v, h, leaf)
-
+	t.root, leaf = insert(t.root, chunks[0].v, h)
 	chunks = chunks[1:]
 	for index, chunk := range chunks {
 		if index == len(chunks)-1 {
@@ -22,11 +25,11 @@ func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
 		next := leaf
 
 		if chunk.t == TChunkStatic {
-			insert(next, chunk.v, h, leaf)
+			_, leaf = insert(next, chunk.v, h)
 			continue
 		}
 
-		insertDynamic(next, chunk.v, h, leaf)
+		_, leaf = insertDynamic(next, chunk.v, h)
 	}
 
 }
@@ -59,62 +62,60 @@ type Node struct {
 	child   *Node
 	sibling *Node
 	t       int
-	ident   string
 }
 
-func insert(n *Node, path string, handler HandlerFunction, leaf *Node) *Node {
+func insert(n *Node, path string, handler HandlerFunction) (root, leaf *Node) {
 
 	if nil == n {
-		leaf = &Node{prefix: path, handler: handler}
-		return leaf
+		leaf = &Node{prefix: path, handler: handler, t: NodeTypeStatic}
+		return leaf, leaf
 	}
 
 	pos := common(n.prefix, path)
 
 	if pos == len(path) {
 		n.handler = handler
-		*leaf = *n
-		return n
+		return n, n
 	}
 
 	if pos == 0 {
-		n.sibling = insert(n.sibling, path, handler, leaf)
-		return n
+		n.sibling, leaf = insert(n.sibling, path, handler)
+		return n, leaf
 	}
 
 	if pos < len(n.prefix) {
-		newNode := &Node{prefix: n.prefix[0:pos], child: n}
+		newNode := &Node{prefix: n.prefix[0:pos], child: n, t: NodeTypeStatic}
 		n.prefix = n.prefix[pos:]
 		n = newNode
 	}
 
-	n.child = insert(n.child, path[pos:], handler, leaf)
+	n.child, leaf = insert(n.child, path[pos:], handler)
 
-	return n
+	return n, leaf
 }
 
-func insertDynamic(n *Node, ident string, handler HandlerFunction, leaf *Node) *Node {
+func insertDynamic(n *Node, ident string, handler HandlerFunction) (root, leaf *Node) {
 
 	if n.child == nil {
-		n.child = &Node{ident: ident, t: 1, handler: handler}
+		n.child = &Node{prefix: ident, t: NodeTypeDynamic, handler: handler}
 		leaf = n.child
 	}
 
 	tmp := n.child
 
 	for {
-		if tmp.t == 1 && tmp.ident == ident {
+		if tmp.t == NodeTypeDynamic && tmp.prefix == ident {
 			if tmp.handler == nil {
 				tmp.handler = handler
 			}
 			leaf = tmp
-			return n
+			return n, leaf
 		}
 
 		if tmp.sibling == nil {
-			tmp.sibling = &Node{ident: ident, t: 1, handler: handler}
+			tmp.sibling = &Node{prefix: ident, t: NodeTypeDynamic, handler: handler}
 			leaf = tmp.sibling
-			return n
+			return n, leaf
 		}
 
 		tmp = tmp.sibling
