@@ -34,6 +34,8 @@ func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
 
 }
 
+//TODO: if we have a dynamic sibling, first we check the static nodes, after that if we don´t find the correct path
+// we should go back to the tree and traverse the dynamic siblings
 func (t *Tree) Find(path string) HandlerFunction {
 	n := t.root
 	p := path
@@ -41,16 +43,20 @@ func (t *Tree) Find(path string) HandlerFunction {
 	for nil != n && len(p) > 0 {
 
 		if n.t == NodeTypeDynamic {
+			found := false
 			for i, ch := range p {
 				if next, ok := n.stops[string(ch)]; ok {
 					n = next
 					//get value of the var value:=p[0:i]
-					p = p[i-1:]
+					p = p[i:]
+					found = true
 					break
 				}
 			}
-			//get value of the var value:=p
-			return n.handler
+			if !found {
+				//get value of the var value:=p
+				return n.handler
+			}
 		}
 
 		pos := common(p, n.prefix)
@@ -59,7 +65,7 @@ func (t *Tree) Find(path string) HandlerFunction {
 			continue
 		}
 
-		if pos == len(p) {
+		if pos == len(p) && len(p) == len(n.prefix) {
 			return n.handler
 		}
 
@@ -110,7 +116,7 @@ func insert(n *Node, path string, handler HandlerFunction) (root, leaf *Node) {
 	}
 
 	if pos < len(n.prefix) {
-		newNode := &Node{prefix: n.prefix[0:pos], child: n, t: NodeTypeStatic, sibling:n.sibling}
+		newNode := &Node{prefix: n.prefix[0:pos], child: n, t: NodeTypeStatic, sibling: n.sibling}
 		n.prefix = n.prefix[pos:]
 		n.sibling = nil
 		n = newNode
