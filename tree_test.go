@@ -43,9 +43,12 @@ func TestInsertChild(t *testing.T) {
 }
 
 func TestInsertDynamicChild(t *testing.T) {
+
+	h:= func(res http.ResponseWriter, req *http.Request) {}
+
 	tree := Tree{}
 	tree.Insert(generateStaticChunk("/path1/"), nil)
-	tree.Insert(append(generateStaticChunk("/path1/"), generateDynamicChunk("id")...), nil)
+	tree.Insert(append(generateStaticChunk("/path1/"), generateDynamicChunk("id")...), h)
 
 	if "/path1/" != tree.root.prefix {
 		t.Errorf("")
@@ -58,6 +61,118 @@ func TestInsertDynamicChild(t *testing.T) {
 		t.Errorf("")
 	}
 	if NodeTypeDynamic != tree.root.child.t {
+		t.Errorf("")
+	}
+
+	_, ok := tree.root.child.stops[""]
+
+	if !ok {
+		t.Errorf("")
+	}
+
+}
+
+func TestInsertDynamicChildHasNoHandler(t *testing.T) {
+
+	h:= func(res http.ResponseWriter, req *http.Request) {}
+
+	tree := Tree{}
+	tree.Insert(generateStaticChunk("/path1/"), nil)
+	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/")...)...), h)
+
+	if "/path1/" != tree.root.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.t {
+		t.Errorf("")
+	}
+
+	if "id" != tree.root.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeDynamic != tree.root.child.t {
+		t.Errorf("")
+	}
+
+	_, ok := tree.root.child.stops[""]
+
+	if ok {
+		t.Errorf("")
+	}
+
+	var child *Node
+	child, ok = tree.root.child.stops["/"]
+
+	if !ok {
+		t.Errorf("")
+	}
+
+	if child.prefix != "/" {
+		t.Errorf("")
+	}
+
+	if child.handler == nil {
+		t.Errorf("")
+	}
+
+}
+
+func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
+
+	h:= func(res http.ResponseWriter, req *http.Request) {}
+
+	tree := Tree{}
+	tree.Insert(generateStaticChunk("/path1/"), nil)
+	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/")...)...), h)
+	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("-")...)...), h)
+
+	if "/path1/" != tree.root.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.t {
+		t.Errorf("")
+	}
+
+	if "id" != tree.root.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeDynamic != tree.root.child.t {
+		t.Errorf("")
+	}
+
+	_, ok := tree.root.child.stops[""]
+
+	if ok {
+		t.Errorf("")
+	}
+
+	var child, sibling *Node
+
+	child, ok = tree.root.child.stops["/"]
+
+	if !ok {
+		t.Errorf("")
+	}
+
+	if child.prefix != "/" {
+		t.Errorf("")
+	}
+
+	if child.handler == nil {
+		t.Errorf("")
+	}
+
+	sibling, ok = tree.root.child.stops["-"]
+
+	if !ok {
+		t.Errorf("")
+	}
+
+	if sibling.prefix != "-" {
+		t.Errorf("")
+	}
+
+	if sibling.handler == nil {
 		t.Errorf("")
 	}
 }
