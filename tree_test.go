@@ -44,10 +44,10 @@ func TestInsertChild(t *testing.T) {
 
 func TestInsertDynamicChild(t *testing.T) {
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1"), nil)
-	tree.Insert(append(generateStaticChunk("/path1"), generateDynamicChunk("id")...), nil)
+	tree.Insert(generateStaticChunk("/path1/"), nil)
+	tree.Insert(append(generateStaticChunk("/path1/"), generateDynamicChunk("id")...), nil)
 
-	if "/path1" != tree.root.prefix {
+	if "/path1/" != tree.root.prefix {
 		t.Errorf("")
 	}
 	if NodeTypeStatic != tree.root.t {
@@ -58,6 +58,134 @@ func TestInsertDynamicChild(t *testing.T) {
 		t.Errorf("")
 	}
 	if NodeTypeDynamic != tree.root.child.t {
+		t.Errorf("")
+	}
+}
+
+func TestInsertHandlerIsOnlyOnLeaf(t *testing.T) {
+	tree := Tree{}
+	h := func(w http.ResponseWriter, r *http.Request) {}
+	tree.Insert(append(generateStaticChunk("/path1")), h)
+	tree.Insert(append(generateStaticChunk("/path1/path2")), h)
+	tree.Insert(append(generateStaticChunk("/path1/path2/path3")), h)
+	tree.Insert(append(generateStaticChunk("/path1/path2/path4")), h)
+
+	if "/path1" != tree.root.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.handler {
+		t.Errorf("")
+	}
+
+	if "/path2" != tree.root.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.handler {
+		t.Errorf("")
+	}
+
+	if "/path" != tree.root.child.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.child.child.t {
+		t.Errorf("")
+	}
+	if nil != tree.root.child.child.handler {
+		t.Errorf("")
+	}
+
+	if "3" != tree.root.child.child.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.child.child.child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.child.child.handler {
+		t.Errorf("")
+	}
+
+	if "4" != tree.root.child.child.child.sibling.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.child.child.child.sibling.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.child.child.sibling.handler {
+		t.Errorf("")
+	}
+}
+
+func TestInsertHandlerNotRemovePreviousHandler(t *testing.T) {
+	tree := Tree{}
+	h := func(w http.ResponseWriter, r *http.Request) {}
+	tree.Insert(append(generateStaticChunk("/path1/"), generateDynamicChunk("id")...), h)
+	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path2")...)...), h)
+	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path3")...)...), h)
+	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path2/path4")...)...), h)
+
+	if "/path1/" != tree.root.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.t {
+		t.Errorf("")
+	}
+	if nil != tree.root.handler {
+		t.Errorf("")
+	}
+
+	if "id" != tree.root.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeDynamic != tree.root.child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.handler {
+		t.Errorf("")
+	}
+
+	if "/path" != tree.root.child.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.child.child.t {
+		t.Errorf("")
+	}
+	if nil != tree.root.child.child.handler {
+		t.Errorf("")
+	}
+
+	if "2" != tree.root.child.child.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.child.child.child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.child.child.handler {
+		t.Errorf("")
+	}
+
+	if "3" != tree.root.child.child.child.sibling.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.child.child.child.sibling.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.child.child.sibling.handler {
+		t.Errorf("")
+	}
+
+	if "/path4" != tree.root.child.child.child.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root.child.child.child.child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.child.child.child.handler {
 		t.Errorf("")
 	}
 }

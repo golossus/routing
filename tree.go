@@ -71,6 +71,16 @@ func insert(n *Node, path string, handler HandlerFunction) (root, leaf *Node) {
 		return leaf, leaf
 	}
 
+	if NodeTypeDynamic == n.t {
+		if n.child == nil {
+			n.child = &Node{prefix: path, t: NodeTypeStatic, handler: handler}
+			leaf = n.child
+			return n, leaf
+		}
+		n.child, leaf = insert(n.child, path, handler)
+		return n, leaf
+	}
+
 	pos := common(n.prefix, path)
 
 	if pos == len(path) {
