@@ -435,10 +435,14 @@ func TestFindHandler(t *testing.T) {
 	tree.Insert(generateStaticChunk("/path3/path4"), handler4)
 	tree.Insert(generateStaticChunk("/path4/path5"), handler5)
 
-	handler := tree.Find("/path3/path4")
+	handler, paramBag := tree.Find("/path3/path4")
 	handler(nil, nil)
 
 	if *flag4 != "/path3/path4" {
+		t.Errorf("")
+	}
+
+	if len(paramBag.params) != 0 {
 		t.Errorf("")
 	}
 }
@@ -448,6 +452,13 @@ type findResult struct {
 	ok     bool
 	f      *string
 	schema string
+}
+
+type findResultWithParams struct {
+	path   string
+	ok     bool
+	values []string
+	keys   []string
 }
 
 func TestFindHandlerWithDynamic(t *testing.T) {
@@ -491,7 +502,8 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	}
 
 	for _, item := range data {
-		handler := tree.Find(item.path)
+		handler, _ := tree.Find(item.path)
+
 		if handler != nil {
 			if item.ok == false {
 				t.Errorf("")
@@ -503,6 +515,50 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 			}
 		} else {
 			if item.ok == true {
+				t.Errorf("")
+			}
+		}
+	}
+
+}
+
+func TestFindHandlerWithDynamicAndParameters(t *testing.T) {
+	tree := Tree{}
+
+	parser := NewParser("/path1/{id}")
+	parser.parse()
+	tree.Insert(parser.chunks, nil)
+	parser = NewParser("/path1/{id}/path2/{slug}")
+	parser.parse()
+	tree.Insert(parser.chunks, nil)
+	parser = NewParser("/path1")
+	parser.parse()
+	tree.Insert(parser.chunks, nil)
+	parser = NewParser("/data1/{id}/data2/{id}")
+	parser.parse()
+	tree.Insert(parser.chunks, nil)
+
+	data := []findResultWithParams{
+		{path: "/path1/123", ok: true, keys: []string{ "id" }, values: []string{ "123" } },
+		{path: "/path1/123/path2/this-is-a-slug", ok: true, keys: []string{ "id", "slug" }, values: []string{ "123", "this-is-a-slug" } },
+		{path: "/path1", ok: true, keys: []string{}, values: []string{} },
+		{path: "/data1/123/data2/456", keys: []string{ "id", "id" }, values: []string{ "123", "456" } },
+		{path: "/", ok: false, keys: []string{}, values: []string{} },
+	}
+
+	for _, item := range data {
+		_, paramBag := tree.Find(item.path)
+
+		if len(paramBag.params) != len(item.values) {
+			t.Errorf("")
+		}
+
+		for index, _ := range item.keys {
+			if paramBag.params[index].name != item.keys[index] {
+				t.Errorf("")
+			}
+
+			if paramBag.params[index].value != item.values[index] {
 				t.Errorf("")
 			}
 		}

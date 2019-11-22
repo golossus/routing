@@ -36,9 +36,11 @@ func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
 
 
 
-func (t *Tree) Find(path string) HandlerFunction {
+func (t *Tree) Find(path string) (HandlerFunction, urlParameterBag) {
 	n := t.root
 	p := path
+
+	urlParameterBag := NewUrlParameterBag()
 
 	for nil != n && len(p) > 0 {
 
@@ -46,16 +48,18 @@ func (t *Tree) Find(path string) HandlerFunction {
 			found := false
 			for i, ch := range p {
 				if next, ok := n.stops[string(ch)]; ok {
+					urlParameter := urlParameter { name: n.prefix, value: p[0:i] }
+					urlParameterBag.addParameter(urlParameter)
 					n = next
-					//get value of the var value:=p[0:i]
 					p = p[i:]
 					found = true
 					break
 				}
 			}
 			if !found {
-				//get value of the var value:=p
-				return n.handler
+				urlParameter := urlParameter { name: n.prefix, value: p }
+				urlParameterBag.addParameter(urlParameter)
+				return n.handler, urlParameterBag
 			}
 		}
 
@@ -66,14 +70,14 @@ func (t *Tree) Find(path string) HandlerFunction {
 		}
 
 		if pos == len(p) && len(p) == len(n.prefix) {
-			return n.handler
+			return n.handler, urlParameterBag
 		}
 
 		p = p[pos:]
 		n = n.child
 	}
 
-	return nil
+	return nil, urlParameterBag
 }
 
 type Node struct {

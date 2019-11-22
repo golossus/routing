@@ -68,7 +68,8 @@ type PrefixTreeRouter struct {
 }
 
 func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	handler := r.tree.Find(request.URL.Path)
+	// TODO: urlParameterBag
+	handler, _ := r.tree.Find(request.URL.Path)
 	if handler == nil {
 		http.NotFound(response, request)
 		return
