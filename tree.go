@@ -34,8 +34,8 @@ func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
 
 }
 
-//TODO: if we have a dynamic sibling, first we check the static nodes, after that if we don´t find the correct path
-// we should go back to the tree and traverse the dynamic siblings
+
+
 func (t *Tree) Find(path string) HandlerFunction {
 	n := t.root
 	p := path

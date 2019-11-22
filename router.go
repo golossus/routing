@@ -85,3 +85,44 @@ func (r *PrefixTreeRouter) AddHandler(path string, handler HandlerFunction) {
 	}
 	r.tree.Insert(parser.chunks, handler)
 }
+
+type urlParameter struct {
+	name  string
+	value string
+}
+
+type urlParameterBag struct {
+	params []urlParameter
+}
+
+func (u *urlParameterBag) addParameter(param urlParameter) {
+	if u.params == nil {
+		u.params = make([]urlParameter, 0, 5)
+	}
+
+	u.params = append(u.params, param)
+}
+
+func (u *urlParameterBag) GetByName(name string, def string) string {
+	for _, item := range u.params {
+		if item.name == name {
+			return item.value
+		}
+	}
+
+	return def
+}
+
+func (u *urlParameterBag) GetByIndex(index uint, def string) string {
+	i := int(index)
+	if len(u.params) <= i {
+		return def
+	}
+
+	return u.params[i].value
+}
+
+
+func NewUrlParameterBag() urlParameterBag {
+	return urlParameterBag{}
+}
