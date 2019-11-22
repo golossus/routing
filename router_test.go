@@ -286,3 +286,28 @@ func TestUrlParameterBagGetByIndex(t *testing.T) {
 		t.Errorf("")
 	}
 }
+
+func TestGetURLParamatersBagInHandler(t *testing.T) {
+	router := PrefixTreeRouter{}
+
+	f := func(response http.ResponseWriter, request *http.Request) {
+		urlParameterBag := request.Context().Value(ParamsBagKey).(urlParameterBag)
+		if 2 != len(urlParameterBag.params) {
+			t.Errorf("")
+		}
+		id := urlParameterBag.GetByName("id", "0")
+		if "100" != id {
+			t.Errorf("")
+		}
+
+		name := urlParameterBag.GetByName("name", "")
+		if "dummy" != name {
+			t.Errorf("")
+		}
+	}
+	router.AddHandler("/path1/{id}/{name}", f)
+
+	request, _ := http.NewRequest("GET", "/path1/100/dummy", nil)
+	router.ServeHTTP(nil, request)
+
+}

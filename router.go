@@ -1,6 +1,7 @@
 package hw14_go
 
 import (
+	"context"
 	"net/http"
 )
 
@@ -67,15 +68,20 @@ type PrefixTreeRouter struct {
 	tree Tree
 }
 
+const (
+	ParamsBagKey = "urlParameters"
+)
+
 func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	// TODO: urlParameterBag
-	handler, _ := r.tree.Find(request.URL.Path)
+	handler, params := r.tree.Find(request.URL.Path)
 	if handler == nil {
 		http.NotFound(response, request)
 		return
 	}
 
-	handler(response, request)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, ParamsBagKey, params)
+	handler(response, request.WithContext(ctx))
 }
 
 func (r *PrefixTreeRouter) AddHandler(path string, handler HandlerFunction) {
@@ -122,7 +128,6 @@ func (u *urlParameterBag) GetByIndex(index uint, def string) string {
 
 	return u.params[i].value
 }
-
 
 func NewUrlParameterBag() urlParameterBag {
 	return urlParameterBag{}
