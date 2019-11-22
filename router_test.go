@@ -291,7 +291,7 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 	router := PrefixTreeRouter{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {
-		urlParameterBag := request.Context().Value(ParamsBagKey).(urlParameterBag)
+		urlParameterBag := request.Context().Value(ParamsBagKey).(UrlParameterBag)
 		if 2 != len(urlParameterBag.params) {
 			t.Errorf("")
 		}

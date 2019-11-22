@@ -41,7 +41,7 @@ func (t *Tree) Insert(verb string, chunks []chunk, handler HandlerFunction) {
 
 }
 
-func (t *Tree) Find(verb string, path string) (HandlerFunction, urlParameterBag) {
+func (t *Tree) Find(verb string, path string) (HandlerFunction, UrlParameterBag) {
 	urlParameterBag := NewUrlParameterBag()
 
 	n, ok := t.root[verb]

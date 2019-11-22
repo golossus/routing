@@ -99,11 +99,11 @@ type urlParameter struct {
 	value string
 }
 
-type urlParameterBag struct {
+type UrlParameterBag struct {
 	params []urlParameter
 }
 
-func (u *urlParameterBag) addParameter(param urlParameter) {
+func (u *UrlParameterBag) addParameter(param urlParameter) {
 	if u.params == nil {
 		u.params = make([]urlParameter, 0, 5)
 	}
@@ -111,7 +111,7 @@ func (u *urlParameterBag) addParameter(param urlParameter) {
 	u.params = append(u.params, param)
 }
 
-func (u *urlParameterBag) GetByName(name string, def string) string {
+func (u *UrlParameterBag) GetByName(name string, def string) string {
 	for _, item := range u.params {
 		if item.name == name {
 			return item.value
@@ -121,7 +121,7 @@ func (u *urlParameterBag) GetByName(name string, def string) string {
 	return def
 }
 
-func (u *urlParameterBag) GetByIndex(index uint, def string) string {
+func (u *UrlParameterBag) GetByIndex(index uint, def string) string {
 	i := int(index)
 	if len(u.params) <= i {
 		return def
@@ -130,6 +130,6 @@ func (u *urlParameterBag) GetByIndex(index uint, def string) string {
 	return u.params[i].value
 }
 
-func NewUrlParameterBag() urlParameterBag {
-	return urlParameterBag{}
+func NewUrlParameterBag() UrlParameterBag {
+	return UrlParameterBag{}
 }
