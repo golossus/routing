@@ -9,7 +9,7 @@ type HandlerFunction func(http.ResponseWriter, *http.Request)
 
 type Router interface {
 	http.Handler
-	AddHandler(string, HandlerFunction)
+	AddHandler(string, string, HandlerFunction)
 }
 
 type routeHandler struct {
@@ -31,7 +31,7 @@ func (r *SliceRouter) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	http.NotFound(response, request)
 }
 
-func (r *SliceRouter) AddHandler(path string, handler HandlerFunction) {
+func (r *SliceRouter) AddHandler(verb string, path string, handler HandlerFunction) {
 
 	if r.handlers == nil {
 		r.handlers = make([]*routeHandler, 0, 10)
@@ -55,7 +55,7 @@ func (r *MapRouter) ServeHTTP(response http.ResponseWriter, request *http.Reques
 	handler(response, request)
 }
 
-func (r *MapRouter) AddHandler(path string, handler HandlerFunction) {
+func (r *MapRouter) AddHandler(verb string, path string, handler HandlerFunction) {
 
 	if r.handlers == nil {
 		r.handlers = make(map[string]HandlerFunction)
@@ -73,7 +73,7 @@ const (
 )
 
 func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	handler, params := r.tree.Find(request.URL.Path)
+	handler, params := r.tree.Find(request.Method, request.URL.Path)
 	if handler == nil {
 		http.NotFound(response, request)
 		return
@@ -84,13 +84,14 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 	handler(response, request.WithContext(ctx))
 }
 
-func (r *PrefixTreeRouter) AddHandler(path string, handler HandlerFunction) {
+func (r *PrefixTreeRouter) AddHandler(verb, path string, handler HandlerFunction) {
 	parser := NewParser(path)
 	_, err := parser.parse()
 	if err != nil {
 		panic(err)
 	}
-	r.tree.Insert(parser.chunks, handler)
+
+	r.tree.Insert(verb, parser.chunks, handler)
 }
 
 type urlParameter struct {

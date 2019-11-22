@@ -18,7 +18,7 @@ func TestSliceAddOneRouteHandler(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.AddHandler("/path1", f)
+	router.AddHandler(http.MethodGet, "/path1", f)
 
 	if nil == router.handlers {
 		t.Errorf("SliceRouter is empty")
@@ -44,8 +44,8 @@ func TestSliceAddSeveralRoutesHandler(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.AddHandler("/path1", nil)
-	router.AddHandler("/path2", f)
+	router.AddHandler(http.MethodGet, "/path1", nil)
+	router.AddHandler(http.MethodGet, "/path2", f)
 
 	if 2 != len(router.handlers) {
 		t.Errorf("Invalid size")
@@ -79,8 +79,8 @@ func TestSliceRouteMatch(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.AddHandler("/path1", nil)
-	router.AddHandler("/path2", f)
+	router.AddHandler(http.MethodGet, "/path1", nil)
+	router.AddHandler(http.MethodGet, "/path2", f)
 
 	request, _ := http.NewRequest("GET", "/path2", nil)
 	router.ServeHTTP(nil, request)
@@ -103,7 +103,7 @@ func TestMapAddOneRouteHandler(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.AddHandler("/path1", f)
+	router.AddHandler(http.MethodGet, "/path1", f)
 
 	if nil == router.handlers {
 		t.Errorf("MapRouter is empty")
@@ -130,8 +130,8 @@ func TestMapAddSeveralRoutesHandler(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.AddHandler("/path1", nil)
-	router.AddHandler("/path2", f)
+	router.AddHandler(http.MethodGet, "/path1", nil)
+	router.AddHandler(http.MethodGet, "/path2", f)
 
 	if 2 != len(router.handlers) {
 		t.Errorf("Invalid size")
@@ -168,8 +168,8 @@ func TestMapRouteMatch(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.AddHandler("/path1", nil)
-	router.AddHandler("/path2", f)
+	router.AddHandler(http.MethodGet, "/path1", nil)
+	router.AddHandler(http.MethodGet, "/path2", f)
 
 	request, _ := http.NewRequest("GET", "/path2", nil)
 	router.ServeHTTP(nil, request)
@@ -186,8 +186,8 @@ func TestPrefixTreeRouter(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.AddHandler("/path1", nil)
-	router.AddHandler("/path2", f)
+	router.AddHandler(http.MethodGet, "/path1", nil)
+	router.AddHandler(http.MethodGet, "/path2", f)
 
 	request, _ := http.NewRequest("GET", "/path2", nil)
 	router.ServeHTTP(nil, request)
@@ -305,9 +305,72 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 			t.Errorf("")
 		}
 	}
-	router.AddHandler("/path1/{id}/{name}", f)
+	router.AddHandler(http.MethodGet, "/path1/{id}/{name}", f)
 
 	request, _ := http.NewRequest("GET", "/path1/100/dummy", nil)
 	router.ServeHTTP(nil, request)
+
+}
+
+func TestVariosVerbsMatching(t *testing.T) {
+	router := PrefixTreeRouter{}
+
+	flag := 0
+	f1 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodGet {
+			t.Errorf("")
+		}
+		flag++
+	}
+
+	f2 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodGet {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f3 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPost {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f4 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPut {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f5 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodDelete {
+			t.Errorf("")
+		}
+		flag++
+	}
+
+	router.AddHandler(http.MethodGet, "/path1", f1)
+	router.AddHandler(http.MethodGet, "/path1/{id}", f2)
+	router.AddHandler(http.MethodPost, "/path1", f3)
+	router.AddHandler(http.MethodPut, "/path1/{id}", f4)
+	router.AddHandler(http.MethodDelete, "/path1/{id}", f5)
+
+	request, _ := http.NewRequest(http.MethodGet, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodGet, "/path1/100", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodPost, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodPut, "/path1/100", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodDelete, "/path1/100", nil)
+	router.ServeHTTP(nil, request)
+
+	if flag != 5 {
+		t.Errorf("")
+	}
 
 }

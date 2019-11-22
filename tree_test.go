@@ -21,23 +21,23 @@ func generateDynamicChunk(ident string) []chunk {
 
 func TestInsertOnEmptyTree(t *testing.T) {
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1"), nil)
 
-	if "/path1" != tree.root.prefix {
+	if "/path1" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
 }
 
 func TestInsertChild(t *testing.T) {
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1"), nil)
-	tree.Insert(generateStaticChunk("/path1/path2"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1/path2"), nil)
 
-	if "/path1" != tree.root.prefix {
+	if "/path1" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
 
-	if "/path2" != tree.root.child.prefix {
+	if "/path2" != tree.root[http.MethodGet].child.prefix {
 		t.Errorf("")
 	}
 }
@@ -47,20 +47,20 @@ func TestInsertDynamicChild(t *testing.T) {
 	h := func(res http.ResponseWriter, req *http.Request) {}
 
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1/"), nil)
-	tree.Insert(append(generateStaticChunk("/path1/"), generateDynamicChunk("id")...), h)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1/"), nil)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/"), generateDynamicChunk("id")...), h)
 
-	if "/path1/" != tree.root.prefix {
+	if "/path1/" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].t {
 		t.Errorf("")
 	}
 
-	if "id" != tree.root.child.prefix {
+	if "id" != tree.root[http.MethodGet].child.prefix {
 		t.Errorf("")
 	}
-	if NodeTypeDynamic != tree.root.child.t {
+	if NodeTypeDynamic != tree.root[http.MethodGet].child.t {
 		t.Errorf("")
 	}
 }
@@ -70,24 +70,24 @@ func TestInsertDynamicChildHasNoHandler(t *testing.T) {
 	h := func(res http.ResponseWriter, req *http.Request) {}
 
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1/"), nil)
-	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/")...)...), h)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1/"), nil)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/")...)...), h)
 
-	if "/path1/" != tree.root.prefix {
+	if "/path1/" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.t {
-		t.Errorf("")
-	}
-
-	if "id" != tree.root.child.prefix {
-		t.Errorf("")
-	}
-	if NodeTypeDynamic != tree.root.child.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].t {
 		t.Errorf("")
 	}
 
-	child, ok := tree.root.child.stops["/"]
+	if "id" != tree.root[http.MethodGet].child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeDynamic != tree.root[http.MethodGet].child.t {
+		t.Errorf("")
+	}
+
+	child, ok := tree.root[http.MethodGet].child.stops["/"]
 
 	if !ok {
 		t.Errorf("")
@@ -108,25 +108,25 @@ func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 	h := func(res http.ResponseWriter, req *http.Request) {}
 
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1/"), nil)
-	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/")...)...), h)
-	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("-")...)...), h)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1/"), nil)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/")...)...), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("-")...)...), h)
 
-	if "/path1/" != tree.root.prefix {
+	if "/path1/" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.t {
-		t.Errorf("")
-	}
-
-	if "id" != tree.root.child.prefix {
-		t.Errorf("")
-	}
-	if NodeTypeDynamic != tree.root.child.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].t {
 		t.Errorf("")
 	}
 
-	_, ok := tree.root.child.stops[""]
+	if "id" != tree.root[http.MethodGet].child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeDynamic != tree.root[http.MethodGet].child.t {
+		t.Errorf("")
+	}
+
+	_, ok := tree.root[http.MethodGet].child.stops[""]
 
 	if ok {
 		t.Errorf("")
@@ -134,7 +134,7 @@ func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 
 	var child, sibling *Node
 
-	child, ok = tree.root.child.stops["/"]
+	child, ok = tree.root[http.MethodGet].child.stops["/"]
 
 	if !ok {
 		t.Errorf("")
@@ -148,7 +148,7 @@ func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 		t.Errorf("")
 	}
 
-	sibling, ok = tree.root.child.stops["-"]
+	sibling, ok = tree.root[http.MethodGet].child.stops["-"]
 
 	if !ok {
 		t.Errorf("")
@@ -166,58 +166,58 @@ func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 func TestInsertHandlerIsOnlyOnLeaf(t *testing.T) {
 	tree := Tree{}
 	h := func(w http.ResponseWriter, r *http.Request) {}
-	tree.Insert(append(generateStaticChunk("/path1")), h)
-	tree.Insert(append(generateStaticChunk("/path1/path2")), h)
-	tree.Insert(append(generateStaticChunk("/path1/path2/path3")), h)
-	tree.Insert(append(generateStaticChunk("/path1/path2/path4")), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1")), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/path2")), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/path2/path3")), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/path2/path4")), h)
 
-	if "/path1" != tree.root.prefix {
+	if "/path1" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].t {
 		t.Errorf("")
 	}
-	if nil == tree.root.handler {
-		t.Errorf("")
-	}
-
-	if "/path2" != tree.root.child.prefix {
-		t.Errorf("")
-	}
-	if NodeTypeStatic != tree.root.child.t {
-		t.Errorf("")
-	}
-	if nil == tree.root.child.handler {
+	if nil == tree.root[http.MethodGet].handler {
 		t.Errorf("")
 	}
 
-	if "/path" != tree.root.child.child.prefix {
+	if "/path2" != tree.root[http.MethodGet].child.prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.child.child.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].child.t {
 		t.Errorf("")
 	}
-	if nil != tree.root.child.child.handler {
-		t.Errorf("")
-	}
-
-	if "3" != tree.root.child.child.child.prefix {
-		t.Errorf("")
-	}
-	if NodeTypeStatic != tree.root.child.child.child.t {
-		t.Errorf("")
-	}
-	if nil == tree.root.child.child.child.handler {
+	if nil == tree.root[http.MethodGet].child.handler {
 		t.Errorf("")
 	}
 
-	if "4" != tree.root.child.child.child.sibling.prefix {
+	if "/path" != tree.root[http.MethodGet].child.child.prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.child.child.child.sibling.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].child.child.t {
 		t.Errorf("")
 	}
-	if nil == tree.root.child.child.child.sibling.handler {
+	if nil != tree.root[http.MethodGet].child.child.handler {
+		t.Errorf("")
+	}
+
+	if "3" != tree.root[http.MethodGet].child.child.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root[http.MethodGet].child.child.child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root[http.MethodGet].child.child.child.handler {
+		t.Errorf("")
+	}
+
+	if "4" != tree.root[http.MethodGet].child.child.child.sibling.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root[http.MethodGet].child.child.child.sibling.t {
+		t.Errorf("")
+	}
+	if nil == tree.root[http.MethodGet].child.child.child.sibling.handler {
 		t.Errorf("")
 	}
 }
@@ -225,100 +225,100 @@ func TestInsertHandlerIsOnlyOnLeaf(t *testing.T) {
 func TestInsertHandlerNotRemovePreviousHandler(t *testing.T) {
 	tree := Tree{}
 	h := func(w http.ResponseWriter, r *http.Request) {}
-	tree.Insert(append(generateStaticChunk("/path1/"), generateDynamicChunk("id")...), h)
-	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path2")...)...), h)
-	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path3")...)...), h)
-	tree.Insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path2/path4")...)...), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/"), generateDynamicChunk("id")...), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path2")...)...), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path3")...)...), h)
+	tree.Insert(http.MethodGet, append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id"), generateStaticChunk("/path2/path4")...)...), h)
 
-	if "/path1/" != tree.root.prefix {
+	if "/path1/" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].t {
 		t.Errorf("")
 	}
-	if nil != tree.root.handler {
-		t.Errorf("")
-	}
-
-	if "id" != tree.root.child.prefix {
-		t.Errorf("")
-	}
-	if NodeTypeDynamic != tree.root.child.t {
-		t.Errorf("")
-	}
-	if nil == tree.root.child.handler {
+	if nil != tree.root[http.MethodGet].handler {
 		t.Errorf("")
 	}
 
-	if "/path" != tree.root.child.child.prefix {
+	if "id" != tree.root[http.MethodGet].child.prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.child.child.t {
+	if NodeTypeDynamic != tree.root[http.MethodGet].child.t {
 		t.Errorf("")
 	}
-	if nil != tree.root.child.child.handler {
-		t.Errorf("")
-	}
-
-	if "2" != tree.root.child.child.child.prefix {
-		t.Errorf("")
-	}
-	if NodeTypeStatic != tree.root.child.child.child.t {
-		t.Errorf("")
-	}
-	if nil == tree.root.child.child.child.handler {
+	if nil == tree.root[http.MethodGet].child.handler {
 		t.Errorf("")
 	}
 
-	if "3" != tree.root.child.child.child.sibling.prefix {
+	if "/path" != tree.root[http.MethodGet].child.child.prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.child.child.child.sibling.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].child.child.t {
 		t.Errorf("")
 	}
-	if nil == tree.root.child.child.child.sibling.handler {
+	if nil != tree.root[http.MethodGet].child.child.handler {
 		t.Errorf("")
 	}
 
-	if "/path4" != tree.root.child.child.child.child.prefix {
+	if "2" != tree.root[http.MethodGet].child.child.child.prefix {
 		t.Errorf("")
 	}
-	if NodeTypeStatic != tree.root.child.child.child.child.t {
+	if NodeTypeStatic != tree.root[http.MethodGet].child.child.child.t {
 		t.Errorf("")
 	}
-	if nil == tree.root.child.child.child.child.handler {
+	if nil == tree.root[http.MethodGet].child.child.child.handler {
+		t.Errorf("")
+	}
+
+	if "3" != tree.root[http.MethodGet].child.child.child.sibling.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root[http.MethodGet].child.child.child.sibling.t {
+		t.Errorf("")
+	}
+	if nil == tree.root[http.MethodGet].child.child.child.sibling.handler {
+		t.Errorf("")
+	}
+
+	if "/path4" != tree.root[http.MethodGet].child.child.child.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != tree.root[http.MethodGet].child.child.child.child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root[http.MethodGet].child.child.child.child.handler {
 		t.Errorf("")
 	}
 }
 
 func TestInsertSibling(t *testing.T) {
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1"), nil)
-	tree.Insert(generateStaticChunk("/path2"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path2"), nil)
 
-	if "/path" != tree.root.prefix {
+	if "/path" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
 
-	if "1" != tree.root.child.prefix {
+	if "1" != tree.root[http.MethodGet].child.prefix {
 		t.Errorf("")
 	}
 
-	if "2" != tree.root.child.sibling.prefix {
+	if "2" != tree.root[http.MethodGet].child.sibling.prefix {
 		t.Errorf("")
 	}
 }
 
 func TestInsertSiblingNoCommon(t *testing.T) {
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1"), nil)
-	tree.Insert(generateStaticChunk("path2"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("path2"), nil)
 
-	if "/path1" != tree.root.prefix {
+	if "/path1" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
 
-	if "path2" != tree.root.sibling.prefix {
+	if "path2" != tree.root[http.MethodGet].sibling.prefix {
 		t.Errorf("")
 	}
 
@@ -326,46 +326,46 @@ func TestInsertSiblingNoCommon(t *testing.T) {
 
 func TestInsertChildOnSibling(t *testing.T) {
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1"), nil)
-	tree.Insert(generateStaticChunk("/path2"), nil)
-	tree.Insert(generateStaticChunk("/path1/path3"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path2"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1/path3"), nil)
 
-	if "/path" != tree.root.prefix {
+	if "/path" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
 
-	if "1" != tree.root.child.prefix {
+	if "1" != tree.root[http.MethodGet].child.prefix {
 		t.Errorf("")
 	}
 
-	if "2" != tree.root.child.sibling.prefix {
+	if "2" != tree.root[http.MethodGet].child.sibling.prefix {
 		t.Errorf("")
 	}
 
-	if "/path3" != tree.root.child.child.prefix {
+	if "/path3" != tree.root[http.MethodGet].child.child.prefix {
 		t.Errorf("")
 	}
 }
 
 func TestInsertSiblingOnSibling(t *testing.T) {
 	tree := Tree{}
-	tree.Insert(generateStaticChunk("/path1"), nil)
-	tree.Insert(generateStaticChunk("/path2"), nil)
-	tree.Insert(generateStaticChunk("/path3"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path2"), nil)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path3"), nil)
 
-	if "/path" != tree.root.prefix {
+	if "/path" != tree.root[http.MethodGet].prefix {
 		t.Errorf("")
 	}
 
-	if "1" != tree.root.child.prefix {
+	if "1" != tree.root[http.MethodGet].child.prefix {
 		t.Errorf("")
 	}
 
-	if "2" != tree.root.child.sibling.prefix {
+	if "2" != tree.root[http.MethodGet].child.sibling.prefix {
 		t.Errorf("")
 	}
 
-	if "3" != tree.root.child.sibling.sibling.prefix {
+	if "3" != tree.root[http.MethodGet].child.sibling.sibling.prefix {
 		t.Errorf("")
 	}
 }
@@ -380,17 +380,17 @@ func TestInsertWithHandler(t *testing.T) {
 	handler3, _ := generateHandler("/path3")
 	handler4, flag4 := generateHandler("/path3/path4")
 	handler5, _ := generateHandler("/path5/path4")
-	tree.Insert(generateStaticChunk("/path1"), handler1)
-	tree.Insert(generateStaticChunk("/path2"), handler2)
-	tree.Insert(generateStaticChunk("/path3"), handler3)
-	tree.Insert(generateStaticChunk("/path3/path4"), handler4)
-	tree.Insert(generateStaticChunk("/path4/path5"), handler5)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1"), handler1)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path2"), handler2)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path3"), handler3)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path3/path4"), handler4)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path4/path5"), handler5)
 
-	if nil != tree.root.handler {
+	if nil != tree.root[http.MethodGet].handler {
 		t.Errorf("")
 	}
 
-	handler := tree.root.child.handler
+	handler := tree.root[http.MethodGet].child.handler
 	if nil == handler {
 		t.Errorf("")
 	}
@@ -399,15 +399,15 @@ func TestInsertWithHandler(t *testing.T) {
 		t.Errorf("")
 	}
 
-	if nil == tree.root.child.sibling.handler {
+	if nil == tree.root[http.MethodGet].child.sibling.handler {
 		t.Errorf("")
 	}
 
-	if nil == tree.root.child.sibling.sibling.handler {
+	if nil == tree.root[http.MethodGet].child.sibling.sibling.handler {
 		t.Errorf("")
 	}
 
-	handler = tree.root.child.sibling.sibling.child.handler
+	handler = tree.root[http.MethodGet].child.sibling.sibling.child.handler
 	if nil == handler {
 		t.Errorf("")
 	}
@@ -416,7 +416,7 @@ func TestInsertWithHandler(t *testing.T) {
 		t.Errorf("")
 	}
 
-	if nil == tree.root.child.sibling.sibling.sibling.handler {
+	if nil == tree.root[http.MethodGet].child.sibling.sibling.sibling.handler {
 		t.Errorf("")
 	}
 
@@ -429,13 +429,13 @@ func TestFindHandler(t *testing.T) {
 	handler3, _ := generateHandler("/path3")
 	handler4, flag4 := generateHandler("/path3/path4")
 	handler5, _ := generateHandler("/path5/path4")
-	tree.Insert(generateStaticChunk("/path1"), handler1)
-	tree.Insert(generateStaticChunk("/path2"), handler2)
-	tree.Insert(generateStaticChunk("/path3"), handler3)
-	tree.Insert(generateStaticChunk("/path3/path4"), handler4)
-	tree.Insert(generateStaticChunk("/path4/path5"), handler5)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path1"), handler1)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path2"), handler2)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path3"), handler3)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path3/path4"), handler4)
+	tree.Insert(http.MethodGet, generateStaticChunk("/path4/path5"), handler5)
 
-	handler, paramBag := tree.Find("/path3/path4")
+	handler, paramBag := tree.Find(http.MethodGet, "/path3/path4")
 	handler(nil, nil)
 
 	if *flag4 != "/path3/path4" {
@@ -471,22 +471,22 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	handler6, flag6 := generateHandler("/path3/{slug}")
 	parser := NewParser("/path1/{id}")
 	parser.parse()
-	tree.Insert(parser.chunks, handler1)
+	tree.Insert(http.MethodGet, parser.chunks, handler1)
 	parser = NewParser("/path1/{id}/path2")
 	parser.parse()
-	tree.Insert(parser.chunks, handler2)
+	tree.Insert(http.MethodGet, parser.chunks, handler2)
 	parser = NewParser("/path1/{id}-path2")
 	parser.parse()
-	tree.Insert(parser.chunks, handler3)
+	tree.Insert(http.MethodGet, parser.chunks, handler3)
 	parser = NewParser("/path1/{name}")
 	parser.parse()
-	tree.Insert(parser.chunks, handler4)
+	tree.Insert(http.MethodGet, parser.chunks, handler4)
 	parser = NewParser("/{date}")
 	parser.parse()
-	tree.Insert(parser.chunks, handler5)
+	tree.Insert(http.MethodGet, parser.chunks, handler5)
 	parser = NewParser("/path3/{slug}")
 	parser.parse()
-	tree.Insert(parser.chunks, handler6)
+	tree.Insert(http.MethodGet, parser.chunks, handler6)
 
 	data := []findResult{
 		{path: "/path1/123", ok: true, f: flag1, schema: "/path1/{id}"},
@@ -502,7 +502,7 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	}
 
 	for _, item := range data {
-		handler, _ := tree.Find(item.path)
+		handler, _ := tree.Find(http.MethodGet, item.path)
 
 		if handler != nil {
 			if item.ok == false {
@@ -527,27 +527,27 @@ func TestFindHandlerWithDynamicAndParameters(t *testing.T) {
 
 	parser := NewParser("/path1/{id}")
 	parser.parse()
-	tree.Insert(parser.chunks, nil)
+	tree.Insert(http.MethodGet, parser.chunks, nil)
 	parser = NewParser("/path1/{id}/path2/{slug}")
 	parser.parse()
-	tree.Insert(parser.chunks, nil)
+	tree.Insert(http.MethodGet, parser.chunks, nil)
 	parser = NewParser("/path1")
 	parser.parse()
-	tree.Insert(parser.chunks, nil)
+	tree.Insert(http.MethodGet, parser.chunks, nil)
 	parser = NewParser("/data1/{id}/data2/{id}")
 	parser.parse()
-	tree.Insert(parser.chunks, nil)
+	tree.Insert(http.MethodGet, parser.chunks, nil)
 
 	data := []findResultWithParams{
-		{path: "/path1/123", ok: true, keys: []string{ "id" }, values: []string{ "123" } },
-		{path: "/path1/123/path2/this-is-a-slug", ok: true, keys: []string{ "id", "slug" }, values: []string{ "123", "this-is-a-slug" } },
-		{path: "/path1", ok: true, keys: []string{}, values: []string{} },
-		{path: "/data1/123/data2/456", keys: []string{ "id", "id" }, values: []string{ "123", "456" } },
-		{path: "/", ok: false, keys: []string{}, values: []string{} },
+		{path: "/path1/123", ok: true, keys: []string{"id"}, values: []string{"123"}},
+		{path: "/path1/123/path2/this-is-a-slug", ok: true, keys: []string{"id", "slug"}, values: []string{"123", "this-is-a-slug"}},
+		{path: "/path1", ok: true, keys: []string{}, values: []string{}},
+		{path: "/data1/123/data2/456", keys: []string{"id", "id"}, values: []string{"123", "456"}},
+		{path: "/", ok: false, keys: []string{}, values: []string{}},
 	}
 
 	for _, item := range data {
-		_, paramBag := tree.Find(item.path)
+		_, paramBag := tree.Find(http.MethodGet, item.path)
 
 		if len(paramBag.params) != len(item.values) {
 			t.Errorf("")

@@ -6,17 +6,24 @@ const (
 )
 
 type Tree struct {
-	root *Node
+	root map[string]*Node
 }
 
-func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
+func (t *Tree) Insert(verb string, chunks []chunk, handler HandlerFunction) {
+
+	if nil == t.root {
+		t.root = make(map[string]*Node)
+	}
+
+	n, _ := t.root[verb]
+
 	var leaf *Node
 	h := handler
 	if len(chunks) > 1 {
 		h = nil
 	}
 
-	t.root, leaf = insert(t.root, chunks[0].v, h)
+	t.root[verb], leaf = insert(n, chunks[0].v, h)
 	chunks = chunks[1:]
 	for index, chunk := range chunks {
 		if index == len(chunks)-1 {
@@ -34,13 +41,14 @@ func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
 
 }
 
-
-
-func (t *Tree) Find(path string) (HandlerFunction, urlParameterBag) {
-	n := t.root
-	p := path
-
+func (t *Tree) Find(verb string, path string) (HandlerFunction, urlParameterBag) {
 	urlParameterBag := NewUrlParameterBag()
+
+	n, ok := t.root[verb]
+	if !ok {
+		return nil, urlParameterBag
+	}
+	p := path
 
 	for nil != n && len(p) > 0 {
 
@@ -48,7 +56,7 @@ func (t *Tree) Find(path string) (HandlerFunction, urlParameterBag) {
 			found := false
 			for i, ch := range p {
 				if next, ok := n.stops[string(ch)]; ok {
-					urlParameter := urlParameter { name: n.prefix, value: p[0:i] }
+					urlParameter := urlParameter{name: n.prefix, value: p[0:i]}
 					urlParameterBag.addParameter(urlParameter)
 					n = next
 					p = p[i:]
@@ -57,7 +65,7 @@ func (t *Tree) Find(path string) (HandlerFunction, urlParameterBag) {
 				}
 			}
 			if !found {
-				urlParameter := urlParameter { name: n.prefix, value: p }
+				urlParameter := urlParameter{name: n.prefix, value: p}
 				urlParameterBag.addParameter(urlParameter)
 				return n.handler, urlParameterBag
 			}

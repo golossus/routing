@@ -187,14 +187,14 @@ func benchRouter(router Router, b *testing.B) {
 	before := m.HeapAlloc
 	handler := func(response http.ResponseWriter, request *http.Request) {}
 	for _, routes := range testRoutes {
-		router.AddHandler(routes, handler)
+		router.AddHandler(http.MethodGet, routes, handler)
 	}
 	runtime.ReadMemStats(m)
 	after := m.HeapAlloc
 	b.ReportMetric(float64(after-before), "memory")
-	request1, _ := http.NewRequest("GET", "/play", nil)
-	request2, _ := http.NewRequest("GET", "/articles/wiki", nil)
-	request3, _ := http.NewRequest("GET", "/gopher/pencil/gopherswrench.jpg", nil)
+	request1, _ := http.NewRequest(http.MethodGet, "/play", nil)
+	request2, _ := http.NewRequest(http.MethodGet, "/articles/wiki", nil)
+	request3, _ := http.NewRequest(http.MethodGet, "/gopher/pencil/gopherswrench.jpg", nil)
 	for i := 0; i < b.N; i++ {
 		router.ServeHTTP(nil, request1)
 		router.ServeHTTP(nil, request2)
