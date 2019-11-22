@@ -51,7 +51,7 @@ func (l *Lexer) scan() token {
 	if l.mode == TModeIdentifier {
 		l.mode = TModeStatic
 
-		if isAlpha(ch) {
+		if isIdentifierRune(ch) {
 			l.buf.UnreadRune()
 			return l.scanIdentifier()
 		}
@@ -106,7 +106,7 @@ func (l *Lexer) scanIdentifier() token {
 			break
 		}
 
-		if !isAlpha(ch) {
+		if !isIdentifierRune(ch) {
 			l.buf.UnreadRune()
 			break
 		}
@@ -281,6 +281,9 @@ func isAlpha(ch rune) bool {
 	return (ch >= 'a' && ch <= 'z') ||
 		(ch >= 'A' && ch <= 'Z') ||
 		(ch >= '0' && ch <= '9')
+}
+func isIdentifierRune(ch rune) bool {
+	return isAlpha(ch) || (ch == '_')
 }
 func isStatic(ch rune) bool {
 	return isAlpha(ch) ||
