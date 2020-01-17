@@ -5,6 +5,16 @@ import (
 	"net/http"
 )
 
+const (
+	GET     = "GET"
+	HEAD    = "HEAD"
+	POST    = "POST"
+	PUT     = "PUT"
+	PATCH   = "PATCH"
+	DELETE  = "DELETE"
+	OPTIONS = "OPTIONS"
+)
+
 type HandlerFunction func(http.ResponseWriter, *http.Request)
 
 type Router interface {
@@ -82,6 +92,38 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, ParamsBagKey, params)
 	handler(response, request.WithContext(ctx))
+}
+
+func (r *PrefixTreeRouter) Get(path string, handler HandlerFunction) {
+	r.AddHandler(GET, path, handler)
+	r.AddHandler(HEAD, path, handler)
+}
+
+func (r *PrefixTreeRouter) Post(path string, handler HandlerFunction) {
+	r.AddHandler(POST, path, handler)
+}
+
+func (r *PrefixTreeRouter) Put(path string, handler HandlerFunction) {
+	r.AddHandler(PUT, path, handler)
+}
+
+func (r *PrefixTreeRouter) Patch(path string, handler HandlerFunction) {
+	r.AddHandler(PATCH, path, handler)
+}
+
+func (r *PrefixTreeRouter) Delete(path string, handler HandlerFunction) {
+	r.AddHandler(DELETE, path, handler)
+}
+
+func (r *PrefixTreeRouter) Options(path string, handler HandlerFunction) {
+	r.AddHandler(OPTIONS, path, handler)
+}
+
+func (r *PrefixTreeRouter) Any(path string, handler HandlerFunction) {
+	kvs := map[string]string{GET: GET, HEAD: HEAD, POST: POST, PUT: PUT, PATCH: PATCH, DELETE: DELETE, OPTIONS: OPTIONS}
+	for _, verb := range kvs {
+		r.AddHandler(verb, path, handler)
+	}
 }
 
 func (r *PrefixTreeRouter) AddHandler(verb, path string, handler HandlerFunction) {
