@@ -184,14 +184,11 @@ func BenchmarkPrefixTreeRouter(b *testing.B) {
 func benchRouter(router Router, b *testing.B) {
 	m := new(runtime.MemStats)
 	runtime.ReadMemStats(m)
-	before := m.HeapAlloc
 	handler := func(response http.ResponseWriter, request *http.Request) {}
 	for _, routes := range testRoutes {
 		router.AddHandler(http.MethodGet, routes, handler)
 	}
 	runtime.ReadMemStats(m)
-	after := m.HeapAlloc
-	b.ReportMetric(float64(after-before), "memory")
 	request1, _ := http.NewRequest(http.MethodGet, "/play", nil)
 	request2, _ := http.NewRequest(http.MethodGet, "/articles/wiki", nil)
 	request3, _ := http.NewRequest(http.MethodGet, "/gopher/pencil/gopherswrench.jpg", nil)
