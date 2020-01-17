@@ -1,4 +1,4 @@
-package hw14_go
+package http_router
 
 const (
 	NodeTypeStatic = iota
