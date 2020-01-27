@@ -2,6 +2,7 @@ package hw14_go
 
 import (
 	"net/http"
+	"reflect"
 	"runtime"
 	"testing"
 )
@@ -184,11 +185,24 @@ func BenchmarkPrefixTreeRouter(b *testing.B) {
 func benchRouter(router Router, b *testing.B) {
 	m := new(runtime.MemStats)
 	runtime.ReadMemStats(m)
+	before := m.HeapAlloc
 	handler := func(response http.ResponseWriter, request *http.Request) {}
 	for _, routes := range testRoutes {
 		router.AddHandler(http.MethodGet, routes, handler)
 	}
 	runtime.ReadMemStats(m)
+	after := m.HeapAlloc
+
+	st := reflect.ValueOf(b)
+	value := st.MethodByName("ReportMetric")
+
+	if !value.IsNil() {
+		inputs := make([]reflect.Value, 2)
+		inputs[0] = reflect.ValueOf(float64(after - before))
+		inputs[1] = reflect.ValueOf("memory")
+		value.Call(inputs)
+	}
+
 	request1, _ := http.NewRequest(http.MethodGet, "/play", nil)
 	request2, _ := http.NewRequest(http.MethodGet, "/articles/wiki", nil)
 	request3, _ := http.NewRequest(http.MethodGet, "/gopher/pencil/gopherswrench.jpg", nil)
