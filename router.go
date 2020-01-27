@@ -96,7 +96,6 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 
 func (r *PrefixTreeRouter) Get(path string, handler HandlerFunction) {
 	r.AddHandler(GET, path, handler)
-	r.AddHandler(HEAD, path, handler)
 }
 
 func (r *PrefixTreeRouter) Post(path string, handler HandlerFunction) {
@@ -120,7 +119,7 @@ func (r *PrefixTreeRouter) Options(path string, handler HandlerFunction) {
 }
 
 func (r *PrefixTreeRouter) Any(path string, handler HandlerFunction) {
-	kvs := map[string]string{GET: GET, HEAD: HEAD, POST: POST, PUT: PUT, PATCH: PATCH, DELETE: DELETE, OPTIONS: OPTIONS}
+	kvs := map[string]string{GET: GET, POST: POST, PUT: PUT, PATCH: PATCH, DELETE: DELETE, OPTIONS: OPTIONS}
 	for _, verb := range kvs {
 		r.AddHandler(verb, path, handler)
 	}
