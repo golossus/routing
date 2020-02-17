@@ -563,7 +563,121 @@ func TestFindHandlerWithDynamicAndParameters(t *testing.T) {
 			}
 		}
 	}
+}
 
+func TestCreateTreeFromChunksWorks(t *testing.T) {
+
+	chunks := []chunk{
+		{t: TChunkStatic, v: "/"},
+		{t: TChunkDynamic, v: "id"},
+		{t: TChunkStatic, v: "/abc"},
+	}
+
+	handler := func(http.ResponseWriter, *http.Request) {}
+
+	tree, err := createTreeFromChunks(chunks, handler)
+
+	if err != nil {
+		t.Errorf("Unable to create tree for chunks %v", chunks)
+	}
+
+	if tree.prefix != "/" || tree.handler != nil || tree.t != NodeTypeStatic || tree.child == nil {
+		t.Errorf("Invalid root node %v", tree)
+	}
+
+	tree = tree.child
+	if tree.prefix != "id" || tree.handler != nil || tree.t != NodeTypeDynamic || tree.child == nil {
+		t.Errorf("Invalid root node %v", tree)
+	}
+	if _, ok := tree.stops["/"]; !ok {
+		t.Errorf("Invalid stops %v for node %v", tree.stops, tree)
+	}
+
+	tree = tree.child
+	if tree.prefix != "/abc" || tree.handler == nil || tree.t != NodeTypeStatic || tree.child != nil {
+		t.Errorf("Invalid leaf node %v", tree)
+	}
+}
+
+func TestInsertPrioritisesStaticPaths(t *testing.T) {
+
+	handler := func(http.ResponseWriter, *http.Request) {}
+
+	tree := Tree{}
+
+	parser := NewParser("/{id}")
+	parser.parse()
+	tree.Insert(http.MethodGet, parser.chunks, handler)
+	parser = NewParser("/{name}")
+	parser.parse()
+	tree.Insert(http.MethodGet, parser.chunks, handler)
+	parser = NewParser("/path1")
+	parser.parse()
+	tree.Insert(http.MethodGet, parser.chunks, handler)
+	parser = NewParser("/path2")
+	parser.parse()
+	tree.Insert(http.MethodGet, parser.chunks, handler)
+
+	node := tree.root[http.MethodGet]
+	if nil != node.handler {
+		t.Errorf("")
+	}
+	if "/" != node.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != node.t {
+		t.Errorf("")
+	}
+
+	if nil != node.child.handler {
+		t.Errorf("")
+	}
+	if "path" != node.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != node.child.t {
+		t.Errorf("")
+	}
+
+	if nil == node.child.sibling.handler {
+		t.Errorf("")
+	}
+	if "id" != node.child.sibling.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeDynamic != node.child.sibling.t {
+		t.Errorf("")
+	}
+
+	if nil == node.child.sibling.sibling.handler {
+		t.Errorf("")
+	}
+	if "name" != node.child.sibling.sibling.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeDynamic != node.child.sibling.sibling.t {
+		t.Errorf("")
+	}
+
+	if nil == node.child.child.handler {
+		t.Errorf("")
+	}
+	if "1" != node.child.child.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != node.child.child.t {
+		t.Errorf("")
+	}
+
+	if nil == node.child.child.sibling.handler {
+		t.Errorf("")
+	}
+	if "2" != node.child.child.sibling.prefix {
+		t.Errorf("")
+	}
+	if NodeTypeStatic != node.child.child.sibling.t {
+		t.Errorf("")
+	}
 }
 
 func generateHandler(path string) (HandlerFunction, *string) {
@@ -571,5 +685,4 @@ func generateHandler(path string) (HandlerFunction, *string) {
 	return func(response http.ResponseWriter, request *http.Request) {
 		flag = path
 	}, &flag
-
 }
