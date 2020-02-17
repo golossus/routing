@@ -2,6 +2,7 @@ package hw14_go
 
 import (
 	"net/http"
+	"reflect"
 	"runtime"
 	"testing"
 )
@@ -191,7 +192,17 @@ func benchRouter(router Router, b *testing.B) {
 	}
 	runtime.ReadMemStats(m)
 	after := m.HeapAlloc
-	b.ReportMetric(float64(after-before), "memory")
+
+	st := reflect.ValueOf(b)
+	value := st.MethodByName("ReportMetric")
+
+	if !value.IsNil() {
+		inputs := make([]reflect.Value, 2)
+		inputs[0] = reflect.ValueOf(float64(after - before))
+		inputs[1] = reflect.ValueOf("memory")
+		value.Call(inputs)
+	}
+
 	request1, _ := http.NewRequest(http.MethodGet, "/play", nil)
 	request2, _ := http.NewRequest(http.MethodGet, "/articles/wiki", nil)
 	request3, _ := http.NewRequest(http.MethodGet, "/gopher/pencil/gopherswrench.jpg", nil)
