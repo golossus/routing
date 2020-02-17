@@ -12,7 +12,9 @@ const (
 	PUT     = "PUT"
 	PATCH   = "PATCH"
 	DELETE  = "DELETE"
+	CONNECT = "CONNECT"
 	OPTIONS = "OPTIONS"
+	TRACE   = "TRACE"
 )
 
 type HandlerFunction func(http.ResponseWriter, *http.Request)
@@ -94,6 +96,10 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 	handler(response, request.WithContext(ctx))
 }
 
+func (r *PrefixTreeRouter) Head(path string, handler HandlerFunction) {
+	r.AddHandler(HEAD, path, handler)
+}
+
 func (r *PrefixTreeRouter) Get(path string, handler HandlerFunction) {
 	r.AddHandler(GET, path, handler)
 }
@@ -114,12 +120,20 @@ func (r *PrefixTreeRouter) Delete(path string, handler HandlerFunction) {
 	r.AddHandler(DELETE, path, handler)
 }
 
+func (r *PrefixTreeRouter) Connect(path string, handler HandlerFunction) {
+	r.AddHandler(CONNECT, path, handler)
+}
+
 func (r *PrefixTreeRouter) Options(path string, handler HandlerFunction) {
 	r.AddHandler(OPTIONS, path, handler)
 }
 
+func (r *PrefixTreeRouter) Trace(path string, handler HandlerFunction) {
+	r.AddHandler(TRACE, path, handler)
+}
+
 func (r *PrefixTreeRouter) Any(path string, handler HandlerFunction) {
-	kvs := map[string]string{GET: GET, POST: POST, PUT: PUT, PATCH: PATCH, DELETE: DELETE, OPTIONS: OPTIONS}
+	kvs := map[string]string{HEAD: HEAD, GET: GET, POST: POST, PUT: PUT, PATCH: PATCH, DELETE: DELETE, CONNECT: CONNECT, OPTIONS: OPTIONS, TRACE: TRACE}
 	for _, verb := range kvs {
 		r.AddHandler(verb, path, handler)
 	}
