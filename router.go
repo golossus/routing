@@ -5,18 +5,6 @@ import (
 	"net/http"
 )
 
-const (
-	GET     = "GET"
-	HEAD    = "HEAD"
-	POST    = "POST"
-	PUT     = "PUT"
-	PATCH   = "PATCH"
-	DELETE  = "DELETE"
-	CONNECT = "CONNECT"
-	OPTIONS = "OPTIONS"
-	TRACE   = "TRACE"
-)
-
 type HandlerFunction func(http.ResponseWriter, *http.Request)
 
 type Router interface {
@@ -97,43 +85,53 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 }
 
 func (r *PrefixTreeRouter) Head(path string, handler HandlerFunction) {
-	r.AddHandler(HEAD, path, handler)
+	r.AddHandler(http.MethodHead, path, handler)
 }
 
 func (r *PrefixTreeRouter) Get(path string, handler HandlerFunction) {
-	r.AddHandler(GET, path, handler)
+	r.AddHandler(http.MethodGet, path, handler)
 }
 
 func (r *PrefixTreeRouter) Post(path string, handler HandlerFunction) {
-	r.AddHandler(POST, path, handler)
+	r.AddHandler(http.MethodPost, path, handler)
 }
 
 func (r *PrefixTreeRouter) Put(path string, handler HandlerFunction) {
-	r.AddHandler(PUT, path, handler)
+	r.AddHandler(http.MethodPut, path, handler)
 }
 
 func (r *PrefixTreeRouter) Patch(path string, handler HandlerFunction) {
-	r.AddHandler(PATCH, path, handler)
+	r.AddHandler(http.MethodPatch, path, handler)
 }
 
 func (r *PrefixTreeRouter) Delete(path string, handler HandlerFunction) {
-	r.AddHandler(DELETE, path, handler)
+	r.AddHandler(http.MethodDelete, path, handler)
 }
 
 func (r *PrefixTreeRouter) Connect(path string, handler HandlerFunction) {
-	r.AddHandler(CONNECT, path, handler)
+	r.AddHandler(http.MethodConnect, path, handler)
 }
 
 func (r *PrefixTreeRouter) Options(path string, handler HandlerFunction) {
-	r.AddHandler(OPTIONS, path, handler)
+	r.AddHandler(http.MethodOptions, path, handler)
 }
 
 func (r *PrefixTreeRouter) Trace(path string, handler HandlerFunction) {
-	r.AddHandler(TRACE, path, handler)
+	r.AddHandler(http.MethodTrace, path, handler)
 }
 
 func (r *PrefixTreeRouter) Any(path string, handler HandlerFunction) {
-	kvs := map[string]string{HEAD: HEAD, GET: GET, POST: POST, PUT: PUT, PATCH: PATCH, DELETE: DELETE, CONNECT: CONNECT, OPTIONS: OPTIONS, TRACE: TRACE}
+	kvs := [9]string{
+		http.MethodHead,
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+		http.MethodConnect,
+		http.MethodOptions,
+		http.MethodTrace,
+	}
 	for _, verb := range kvs {
 		r.AddHandler(verb, path, handler)
 	}
