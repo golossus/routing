@@ -1,4 +1,6 @@
-package hw14_go
+package http_router
+
+import "fmt"
 
 const (
 	NodeTypeStatic = iota
@@ -11,34 +13,122 @@ type Tree struct {
 
 func (t *Tree) Insert(verb string, chunks []chunk, handler HandlerFunction) {
 
+	subtree, err := createTreeFromChunks(chunks, handler)
+	if err != nil {
+		panic(err)
+	}
+
 	if nil == t.root {
 		t.root = make(map[string]*Node)
 	}
 
-	n, _ := t.root[verb]
+	t.root[verb] = combine(t.root[verb], subtree)
+}
 
-	var leaf *Node
-	h := handler
-	if len(chunks) > 1 {
-		h = nil
+func combine(tree1 *Node, tree2 *Node) *Node {
+
+	if tree1 == nil {
+		return tree2
 	}
 
-	t.root[verb], leaf = insert(n, chunks[0].v, h)
-	chunks = chunks[1:]
-	for index, chunk := range chunks {
-		if index == len(chunks)-1 {
-			h = handler
-		}
-		next := leaf
-
-		if chunk.t == TChunkStatic {
-			_, leaf = insert(next, chunk.v, h)
-			continue
-		}
-
-		_, leaf = insertDynamic(next, chunk.v, h)
+	if tree2 == nil {
+		return tree1
 	}
 
+	if tree1.t == NodeTypeDynamic {
+		if tree2.t == NodeTypeDynamic && tree2.prefix == tree1.prefix {
+			for k, v := range tree1.stops {
+				tree2.stops[k] = v
+			}
+			tree1.stops = tree2.stops
+			tree1.child = combine(tree1.child, tree2.child)
+			return tree1
+		}
+
+		if tree2.t == NodeTypeDynamic && tree2.prefix != tree1.prefix {
+			tree1.sibling = combine(tree1.sibling, tree2)
+			return tree1
+		}
+
+		if tree2.t == NodeTypeStatic {
+			tree2.sibling = tree1
+			return tree2
+		}
+	}
+
+	if tree2.t == NodeTypeDynamic {
+		tree1.sibling = combine(tree1.sibling, tree2)
+		return tree1
+	}
+
+	pos := common(tree1.prefix, tree2.prefix)
+
+	if pos == 0 {
+		tree1.sibling = combine(tree1.sibling, tree2)
+		return tree1
+	}
+
+	if pos == len(tree1.prefix) && pos != len(tree2.prefix) {
+		tree2.prefix = tree2.prefix[pos:]
+		tree1.child = combine(tree1.child, tree2)
+		return tree1
+	}
+
+	if pos != len(tree1.prefix) && pos == len(tree2.prefix) {
+		tree1.prefix = tree1.prefix[pos:]
+		tree2.child = combine(tree1, tree2.child)
+		return tree2
+	}
+
+	if pos != len(tree1.prefix) && pos != len(tree2.prefix) {
+		split := createNodeFromChunk(chunk{t: TChunkStatic, v: tree1.prefix[:pos]})
+		split.sibling = tree1.sibling
+
+		tree1.prefix = tree1.prefix[pos:]
+		tree1.sibling = nil
+
+		tree2.prefix = tree2.prefix[pos:]
+
+		split.child = combine(tree1, tree2)
+		return split
+	}
+
+	tree1.child = combine(tree1.child, tree2.child)
+	return tree1
+}
+
+func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error) {
+
+	if len(chunks) < 1 {
+		return nil, fmt.Errorf("Chunks can not be empty")
+	}
+
+	var root = createNodeFromChunk(chunks[0])
+	n := root
+
+	for i := 1; i < len(chunks); i++ {
+		newNode := createNodeFromChunk(chunks[i])
+		if n.t == NodeTypeDynamic {
+			n.stops[newNode.prefix[0:1]] = newNode
+		}
+		n.child = newNode
+		n = n.child
+	}
+
+	n.handler = handler
+
+	return root, nil
+}
+
+func createNodeFromChunk(c chunk) *Node {
+	var n *Node
+	if c.t == TChunkStatic {
+		n = &Node{prefix: c.v, handler: nil, t: NodeTypeStatic}
+	} else {
+		stops := make(map[string]*Node)
+		n = &Node{prefix: c.v, t: NodeTypeDynamic, handler: nil, stops: stops}
+	}
+	return n
 }
 
 func (t *Tree) Find(verb string, path string) (HandlerFunction, UrlParameterBag) {
@@ -95,103 +185,6 @@ type Node struct {
 	sibling *Node
 	t       int
 	stops   map[string]*Node
-}
-
-func insert(n *Node, path string, handler HandlerFunction) (root, leaf *Node) {
-
-	if nil == n {
-		leaf = &Node{prefix: path, handler: handler, t: NodeTypeStatic}
-		return leaf, leaf
-	}
-
-	if NodeTypeDynamic == n.t {
-		if n.child == nil {
-			n.child = &Node{prefix: path, t: NodeTypeStatic, handler: handler}
-			leaf = n.child
-			n.stops[path[0:1]] = leaf
-			return n, leaf
-		}
-		n.child, leaf = insert(n.child, path, handler)
-		n.stops[path[0:1]] = leaf
-		return n, leaf
-	}
-
-	pos := common(n.prefix, path)
-
-	if pos == 0 {
-		if n.sibling != nil && n.sibling.t == NodeTypeDynamic {
-			n.sibling, leaf = insertSibling(n.sibling, path, handler)
-			return n, leaf
-		}
-		n.sibling, leaf = insert(n.sibling, path, handler)
-		return n, leaf
-	}
-
-	if pos < len(n.prefix) {
-		newNode := &Node{prefix: n.prefix[0:pos], child: n, t: NodeTypeStatic, sibling: n.sibling}
-		n.prefix = n.prefix[pos:]
-		n.sibling = nil
-		n = newNode
-	}
-
-	if pos == len(path) {
-		if n.handler == nil {
-			n.handler = handler
-		}
-		return n, n
-	}
-
-	n.child, leaf = insert(n.child, path[pos:], handler)
-
-	return n, leaf
-}
-
-func insertSibling(sibling *Node, path string, handler HandlerFunction) (root, leaf *Node) {
-	if sibling.sibling == nil {
-		sibling.sibling = &Node{prefix: path, t: NodeTypeStatic, handler: handler}
-		leaf = sibling.sibling
-		return sibling, leaf
-	}
-
-	if sibling.sibling.t == NodeTypeDynamic {
-		sibling.sibling, leaf = insertSibling(sibling.sibling, path, handler)
-		return sibling, leaf
-	}
-
-	sibling.sibling, leaf = insert(sibling.sibling, path, handler)
-	return sibling, leaf
-}
-
-func insertDynamic(n *Node, ident string, handler HandlerFunction) (root, leaf *Node) {
-
-	if n.child == nil {
-		stops := make(map[string]*Node)
-		n.child = &Node{prefix: ident, t: NodeTypeDynamic, handler: handler, stops: stops}
-		leaf = n.child
-	}
-
-	tmp := n.child
-
-	for {
-		if tmp.t == NodeTypeDynamic && tmp.prefix == ident {
-			if tmp.handler == nil {
-				tmp.handler = handler
-			}
-			leaf = tmp
-
-			return n, leaf
-		}
-
-		if tmp.sibling == nil {
-			stops := make(map[string]*Node)
-			tmp.sibling = &Node{prefix: ident, t: NodeTypeDynamic, handler: handler, stops: stops}
-			leaf = tmp.sibling
-
-			return n, leaf
-		}
-
-		tmp = tmp.sibling
-	}
 }
 
 func common(s1, s2 string) int {

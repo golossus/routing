@@ -1,3 +1,3 @@
-module github.com/sangarbe/hw14-go
+module github.com/golossus/http-router
 
 go 1.13
