@@ -374,3 +374,104 @@ func TestVariosVerbsMatching(t *testing.T) {
 	}
 
 }
+
+func TestVerbsMethodsAreWorking(t *testing.T) {
+	router := PrefixTreeRouter{}
+
+	flag := 0
+	f1 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodGet {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f2 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodHead {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f3 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPost {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f4 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPut {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f5 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPatch {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f6 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodDelete {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f7 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodConnect {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f8 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodOptions {
+			t.Errorf("")
+		}
+		flag++
+	}
+	f9 := func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodTrace {
+			t.Errorf("")
+		}
+		flag++
+	}
+	router.Get("/path1", f1)
+	router.Head("/path1", f2)
+	router.Post("/path1", f3)
+	router.Put("/path1", f4)
+	router.Patch("/path1", f5)
+	router.Delete("/path1", f6)
+	router.Connect("/path1", f7)
+	router.Options("/path1", f8)
+	router.Trace("/path1", f9)
+
+	request, _ := http.NewRequest(http.MethodGet, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodHead, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodPost, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodPut, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodPatch, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodDelete, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodConnect, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodOptions, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	request, _ = http.NewRequest(http.MethodTrace, "/path1", nil)
+	router.ServeHTTP(nil, request)
+
+	if flag != 9 {
+		t.Errorf("")
+	}
+
+}

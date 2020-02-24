@@ -84,6 +84,59 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 	handler(response, request.WithContext(ctx))
 }
 
+func (r *PrefixTreeRouter) Head(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodHead, path, handler)
+}
+
+func (r *PrefixTreeRouter) Get(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodGet, path, handler)
+}
+
+func (r *PrefixTreeRouter) Post(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodPost, path, handler)
+}
+
+func (r *PrefixTreeRouter) Put(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodPut, path, handler)
+}
+
+func (r *PrefixTreeRouter) Patch(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodPatch, path, handler)
+}
+
+func (r *PrefixTreeRouter) Delete(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodDelete, path, handler)
+}
+
+func (r *PrefixTreeRouter) Connect(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodConnect, path, handler)
+}
+
+func (r *PrefixTreeRouter) Options(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodOptions, path, handler)
+}
+
+func (r *PrefixTreeRouter) Trace(path string, handler HandlerFunction) {
+	r.AddHandler(http.MethodTrace, path, handler)
+}
+
+func (r *PrefixTreeRouter) Any(path string, handler HandlerFunction) {
+	kvs := [9]string{
+		http.MethodHead,
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+		http.MethodConnect,
+		http.MethodOptions,
+		http.MethodTrace,
+	}
+	for _, verb := range kvs {
+		r.AddHandler(verb, path, handler)
+	}
+}
+
 func (r *PrefixTreeRouter) AddHandler(verb, path string, handler HandlerFunction) {
 	parser := NewParser(path)
 	_, err := parser.parse()
