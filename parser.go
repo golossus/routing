@@ -60,7 +60,7 @@ func (p *Parser) parseVar() (bool, error) {
 	token = p.lexer.scan()
 
 	var regExp *regexp.Regexp
-	if isConstraintToken(token) {
+	if isRegExpressionToken(token) {
 		regExp = regexp.MustCompile(fmt.Sprintf("^%s$", token.v))
 
 		token = p.lexer.scan()
@@ -77,7 +77,7 @@ func (p *Parser) parseVar() (bool, error) {
 	if isEndToken(token) {
 		return true, nil
 	}
-	if isOpenVarToken(token) || isCloseVarToken(token) || isConstraintToken(token) {
+	if isOpenVarToken(token) || isCloseVarToken(token) || isRegExpressionToken(token) {
 		return false, fmt.Errorf("parser error, expected %s but got %s", "static", token.v)
 	}
 
@@ -131,7 +131,7 @@ func isVarToken(t token) bool {
 	return t.t == TVar
 }
 
-func isConstraintToken(t token) bool {
+func isRegExpressionToken(t token) bool {
 	return t.t == TExpReg
 }
 
