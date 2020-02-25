@@ -2,217 +2,9 @@ package http_router
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
-
-func TestSimplePath(t *testing.T) {
-	lexer := NewLexer("/path1")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestDoubleStatic(t *testing.T) {
-	lexer := NewLexer("/path1/path2")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestHome(t *testing.T) {
-	lexer := NewLexer("/")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestEndSlash(t *testing.T) {
-	lexer := NewLexer("/path1/")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestWithParameter(t *testing.T) {
-	lexer := NewLexer("/path1/{id}/path2")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestInvalidRoute(t *testing.T) {
-	lexer := NewLexer("/path1/{id/path2")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestInvalidRouteMissingOpen(t *testing.T) {
-	lexer := NewLexer("/path1/id}/path2")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "id", t: TStatic},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestWithEmptyVar(t *testing.T) {
-	lexer := NewLexer("/path1/{}/path2")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestWithDoubleOpenVar(t *testing.T) {
-	lexer := NewLexer("/path1/{{id}/path2")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestWithFinalDoubleOpenVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}/path2{")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "{", t: TOpenVar},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestWithDoubleCloseVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}}/path2")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func TestWithStaticValueAfterCloseVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}_name/path2")
-
-	tokens := lexer.scanAll()
-	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "_name", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
-	}
-	validateTokens(expectedTokens, tokens, t)
-}
-
-func validateTokens(expectedTokens, tokens []token, t *testing.T) {
-	for index, token := range tokens {
-		if token.t != expectedTokens[index].t || token.v != expectedTokens[index].v {
-			t.Errorf(
-				"Expected token: %v,%v but got %v,%v",
-				expectedTokens[index].t,
-				expectedTokens[index].v,
-				token.t,
-				token.v,
-			)
-		}
-	}
-}
 
 func TestParserValidatesValidPaths(t *testing.T) {
 	paths := []string{
@@ -222,7 +14,10 @@ func TestParserValidatesValidPaths(t *testing.T) {
 		"/path1/path2/",
 		"/path1/{id}",
 		"/path1/{id}/",
+		"/path1/{id:[0-9]{4}-[0-9]{2}-[0-9]{2}}/",
+		"/path1/{id:/ab+c/}",
 		"/path1/{id}/path2",
+		"/path1/{id:/d(b+)d/g}/path2",
 		"/{id}",
 		"/{id}/",
 		"/{id}/path1",
@@ -231,6 +26,7 @@ func TestParserValidatesValidPaths(t *testing.T) {
 		"/{id}/{name}",
 		"/{id}/{name}/",
 		"/{id}-{name}/",
+		"/{id:[0-9]+}-{name:/ab+c/}/",
 	}
 
 	for _, path := range paths {
@@ -258,12 +54,19 @@ func TestParserDoesNotValidateInvalidPaths(t *testing.T) {
 		"/path1/{}",
 		"/path1/{id}{name}",
 		"/{}",
+		"/{/}",
 		"/{",
 		"/}",
 		"/{name{id}}",
 		"/{id$}",
 		"/{.id}",
 		"/{id/name}",
+		":[0-9]+",
+		"/:[0-9]+",
+		"/path1:[0-9]+/{id}",
+		"/path1/:[0-9]+{id}",
+		"/path1/{:[0-9]+id}",
+		"/path1/{id}:[0-9]+",
 	}
 
 	for _, path := range paths {
@@ -272,6 +75,23 @@ func TestParserDoesNotValidateInvalidPaths(t *testing.T) {
 		if valid {
 			t.Errorf("Validated invalid path %v", path)
 		}
+	}
+}
+
+func TestParserThrowsPanicWhenExpressionIsInvalid(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+
+	paths := []string{
+		"/path1/{id:[0-9+}/",
+	}
+
+	for _, path := range paths {
+		parser := NewParser(path)
+		_, _ = parser.parse()
 	}
 }
 
@@ -292,24 +112,32 @@ func TestParserChechChunks(t *testing.T) {
 		"/{id}/{name}",
 		"/{id}/{name}/",
 		"/{id}-{name}/",
+		"/{id:[0-9]+}/",
+		"/path1/{id:/ab+c/}",
+		"/path1/{id:/d(b+)d/g}/path2",
+		"/{id:[0-9]+}-{name:/ab+c/}/",
 	}
 
 	expectedChunks := []string{
-		"[{0 /}]",
-		"[{0 /path1}]",
-		"[{0 /path1/path2}]",
-		"[{0 /path1/path2/}]",
-		"[{0 /path1/} {1 id}]",
-		"[{0 /path1/} {1 id} {0 /}]",
-		"[{0 /path1/} {1 id} {0 /path2}]",
-		"[{0 /} {1 id}]",
-		"[{0 /} {1 id} {0 /}]",
-		"[{0 /} {1 id} {0 /path1}]",
-		"[{0 /asdf-} {1 id}]",
-		"[{0 /} {1 id} {0 -adfasf}]",
-		"[{0 /} {1 id} {0 /} {1 name}]",
-		"[{0 /} {1 id} {0 /} {1 name} {0 /}]",
-		"[{0 /} {1 id} {0 -} {1 name} {0 /}]",
+		"[{0 / }]",
+		"[{0 /path1 }]",
+		"[{0 /path1/path2 }]",
+		"[{0 /path1/path2/ }]",
+		"[{0 /path1/ } {1 id }]",
+		"[{0 /path1/ } {1 id } {0 / }]",
+		"[{0 /path1/ } {1 id } {0 /path2 }]",
+		"[{0 / } {1 id }]",
+		"[{0 / } {1 id } {0 / }]",
+		"[{0 / } {1 id } {0 /path1 }]",
+		"[{0 /asdf- } {1 id }]",
+		"[{0 / } {1 id } {0 -adfasf }]",
+		"[{0 / } {1 id } {0 / } {1 name }]",
+		"[{0 / } {1 id } {0 / } {1 name } {0 / }]",
+		"[{0 / } {1 id } {0 - } {1 name } {0 / }]",
+		"[{0 / } {1 id ^[0-9]+$} {0 / }]",
+		"[{0 /path1/ } {1 id ^/ab+c/$}]",
+		"[{0 /path1/ } {1 id ^/d(b+)d/g$} {0 /path2 }]",
+		"[{0 / } {1 id ^[0-9]+$} {0 - } {1 name ^/ab+c/$} {0 / }]",
 	}
 
 	for index, path := range paths {
@@ -318,8 +146,16 @@ func TestParserChechChunks(t *testing.T) {
 		if !valid {
 			t.Errorf("%v in path %v", err, path)
 		}
-		if expectedChunks[index] != fmt.Sprintf("%v", parser.chunks) {
-			t.Errorf("Parser error, Invalid chunk %v for path %v", parser.chunks, path)
+		var chunks []string
+		for _, chunk := range parser.chunks {
+			expString := ""
+			if chunk.exp != nil {
+				expString = chunk.exp.String()
+			}
+			chunks = append(chunks, "{"+strconv.Itoa(chunk.t)+" "+chunk.v+" "+expString+"}")
+		}
+		if expectedChunks[index] != fmt.Sprintf("%v", chunks) {
+			t.Errorf("Parser error, Invalid chunk %v for path %v", chunks, path)
 		}
 	}
 }
