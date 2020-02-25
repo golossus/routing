@@ -305,9 +305,27 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 			t.Errorf("")
 		}
 	}
-	router.AddHandler(http.MethodGet, "/path1/{id}/{name}", f)
+	router.AddHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]{1,5}}", f)
 
 	request, _ := http.NewRequest("GET", "/path1/100/dummy", nil)
+	router.ServeHTTP(nil, request)
+
+}
+
+func TestGetURLParamatersFailsIfRegExpFails(t *testing.T) {
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+
+	router := PrefixTreeRouter{}
+
+	f := func(response http.ResponseWriter, request *http.Request) {}
+	router.AddHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", f)
+
+	request, _ := http.NewRequest("GET", "/path1/100/123", nil)
 	router.ServeHTTP(nil, request)
 
 }

@@ -1,6 +1,9 @@
 package http_router
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+)
 
 const (
 	NodeTypeStatic = iota
@@ -100,7 +103,7 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error) {
 
 	if len(chunks) < 1 {
-		return nil, fmt.Errorf("Chunks can not be empty")
+		return nil, fmt.Errorf("chunks can not be empty")
 	}
 
 	var root = createNodeFromChunk(chunks[0])
@@ -126,7 +129,8 @@ func createNodeFromChunk(c chunk) *Node {
 		n = &Node{prefix: c.v, handler: nil, t: NodeTypeStatic}
 	} else {
 		stops := make(map[string]*Node)
-		n = &Node{prefix: c.v, t: NodeTypeDynamic, handler: nil, stops: stops}
+
+		n = &Node{prefix: c.v, t: NodeTypeDynamic, handler: nil, stops: stops, regexp: c.exp}
 	}
 	return n
 }
@@ -146,18 +150,31 @@ func (t *Tree) Find(verb string, path string) (HandlerFunction, UrlParameterBag)
 			found := false
 			for i, ch := range p {
 				if next, ok := n.stops[string(ch)]; ok {
-					urlParameter := urlParameter{name: n.prefix, value: p[0:i]}
-					urlParameterBag.addParameter(urlParameter)
-					n = next
-					p = p[i:]
-					found = true
-					break
+					validExpression := true
+					if n.regexp != nil {
+						validExpression = n.regexp.MatchString(p[0:i])
+					}
+					if validExpression {
+						urlParameter := urlParameter{name: n.prefix, value: p[0:i]}
+						urlParameterBag.addParameter(urlParameter)
+						n = next
+						p = p[i:]
+						found = true
+						break
+					}
 				}
 			}
 			if !found {
-				urlParameter := urlParameter{name: n.prefix, value: p}
-				urlParameterBag.addParameter(urlParameter)
-				return n.handler, urlParameterBag
+				validExpression := true
+				if n.regexp != nil {
+					validExpression = n.regexp.MatchString(p)
+				}
+				if validExpression {
+					urlParameter := urlParameter{name: n.prefix, value: p}
+					urlParameterBag.addParameter(urlParameter)
+					return n.handler, urlParameterBag
+				}
+				return nil, urlParameterBag
 			}
 		}
 
@@ -185,6 +202,7 @@ type Node struct {
 	sibling *Node
 	t       int
 	stops   map[string]*Node
+	regexp  *regexp.Regexp
 }
 
 func common(s1, s2 string) int {
