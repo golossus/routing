@@ -72,7 +72,6 @@ func (p *Parser) parseVar() (bool, error) {
 	p.chunks = append(p.chunks, chunk{t: TChunkDynamic, v: p.buf.String(), exp: regExp})
 	p.buf.Reset()
 
-	p.last = token
 	token = p.lexer.scan()
 	if isEndToken(token) {
 		return true, nil
@@ -99,8 +98,8 @@ func (p *Parser) parseStatic() (bool, error) {
 
 	if (!isSlashToken(p.last) && isSlashToken(token)) || isStaticToken(token) {
 		p.buf.Write([]byte(token.v))
-
 		p.last = token
+
 		return p.parseStatic()
 	}
 
@@ -108,7 +107,6 @@ func (p *Parser) parseStatic() (bool, error) {
 		p.chunks = append(p.chunks, chunk{t: TChunkStatic, v: p.buf.String()})
 		p.buf.Reset()
 
-		p.last = token
 		return p.parseVar()
 	}
 
