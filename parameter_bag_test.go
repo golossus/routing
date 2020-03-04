@@ -13,7 +13,7 @@ func TestUrlParameterBagEmptyOnCreation(t *testing.T) {
 func TestUrlParameterBagAddsParameter(t *testing.T) {
 	bag := NewUrlParameterBag()
 
-	bag.addParameter(urlParameter{name: "param1", value: "v1"})
+	bag.add("param1", "v1")
 
 	if bag.params == nil {
 		t.Errorf("")
@@ -31,9 +31,9 @@ func TestUrlParameterBagAddsParameter(t *testing.T) {
 func TestUrlParameterBagGetByName(t *testing.T) {
 	bag := NewUrlParameterBag()
 
-	bag.addParameter(urlParameter{name: "param1", value: "v1"})
-	bag.addParameter(urlParameter{name: "param2", value: "v2"})
-	bag.addParameter(urlParameter{name: "param3", value: "v3"})
+	bag.add("param1", "v1")
+	bag.add("param2", "v2")
+	bag.add("param3", "v3")
 
 	if bag.params == nil {
 		t.Errorf("")
@@ -63,9 +63,9 @@ func TestUrlParameterBagGetByName(t *testing.T) {
 func TestUrlParameterBagGetByIndex(t *testing.T) {
 	bag := NewUrlParameterBag()
 
-	bag.addParameter(urlParameter{name: "param1", value: "v1"})
-	bag.addParameter(urlParameter{name: "param2", value: "v2"})
-	bag.addParameter(urlParameter{name: "param3", value: "v3"})
+	bag.add("param1", "v1")
+	bag.add("param2", "v2")
+	bag.add("param3", "v3")
 
 	if bag.params == nil {
 		t.Errorf("")

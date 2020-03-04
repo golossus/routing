@@ -76,8 +76,7 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, ParamsBagKey, params)
-	handler(response, request.WithContext(ctx))
+	handler(response, request.WithContext(context.WithValue(ctx, ParamsBagKey, params)))
 }
 
 func (r *PrefixTreeRouter) Head(path string, handler HandlerFunction) {

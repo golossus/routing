@@ -13,12 +13,12 @@ type UrlParameterBag struct {
 	params []urlParameter
 }
 
-func (u *UrlParameterBag) addParameter(param urlParameter) {
+func (u *UrlParameterBag) add(name, value string) {
 	if u.params == nil {
 		u.params = make([]urlParameter, 0, 5)
 	}
 
-	u.params = append(u.params, param)
+	u.params = append(u.params, urlParameter{name, value})
 }
 
 func (u *UrlParameterBag) GetByName(name string, def string) string {
