@@ -17,7 +17,7 @@ func TestParserValidatesValidPaths(t *testing.T) {
 		"/path1/{id:[0-9]{4}-[0-9]{2}-[0-9]{2}}/",
 		"/path1/{id:/ab+c/}",
 		"/path1/{id}/path2",
-		"/path1/{id:/d(b+)d/g}/path2",
+		"/path1/{id:/ab+c/}/path2",
 		"/{id}",
 		"/{id}/",
 		"/{id}/path1",
@@ -114,7 +114,7 @@ func TestParserChechChunks(t *testing.T) {
 		"/{id}-{name}/",
 		"/{id:[0-9]+}/",
 		"/path1/{id:/ab+c/}",
-		"/path1/{id:/d(b+)d/g}/path2",
+		"/path1/{id:/ab+c/}/path2",
 		"/{id:[0-9]+}-{name:/ab+c/}/",
 	}
 
@@ -136,7 +136,7 @@ func TestParserChechChunks(t *testing.T) {
 		"[{0 / } {1 id } {0 - } {1 name } {0 / }]",
 		"[{0 / } {1 id ^[0-9]+$} {0 / }]",
 		"[{0 /path1/ } {1 id ^/ab+c/$}]",
-		"[{0 /path1/ } {1 id ^/d(b+)d/g$} {0 /path2 }]",
+		"[{0 /path1/ } {1 id ^/ab+c/$} {0 /path2 }]",
 		"[{0 / } {1 id ^[0-9]+$} {0 - } {1 name ^/ab+c/$} {0 / }]",
 	}
 
