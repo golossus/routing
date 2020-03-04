@@ -493,7 +493,7 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	handler1, flag1 := generateHandler("/path1/{id}")
 	handler2, flag2 := generateHandler("/path1/{id}/path2")
 	handler3, flag3 := generateHandler("/path1/{id}-path2")
-	handler4, _ := generateHandler("/path1/{name}")
+	handler4, flag4 := generateHandler("/path1/{name}")
 	handler5, flag5 := generateHandler("/{date}")
 	handler6, flag6 := generateHandler("/path3/{slug}")
 	handler7, flag7 := generateHandler("/path4/{id:[0-9]+}")
@@ -515,7 +515,7 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	_, _ = parser.parse()
 	tree.Insert(http.MethodGet, parser.chunks, handler4)
 
-	parser = NewParser("/{date}")
+	parser = NewParser("/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}")
 	_, _ = parser.parse()
 	tree.Insert(http.MethodGet, parser.chunks, handler5)
 
@@ -532,8 +532,9 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	tree.Insert(http.MethodGet, parser.chunks, handler8)
 
 	data := []findResult{
+		{path: "/path4/1s2a3", ok: false, f: nil},
 		{path: "/path1/123", ok: true, f: flag1, schema: "/path1/{id}"},
-		{path: "/path1/123/", ok: false, f: nil},
+		{path: "/path1/123/", ok: true, f: flag4, schema: "/path1/{name}"},
 		{path: "/path1/123/path2", ok: true, f: flag2, schema: "/path1/{id}/path2"},
 		{path: "/path1/123-path2", ok: true, f: flag3, schema: "/path1/{id}-path2"},
 		{path: "/path1/pepe", ok: true, f: flag1, schema: "/path1/{id}"},
@@ -542,7 +543,7 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 		{path: "/path3/123", ok: true, f: flag6, schema: "/path3/{slug}"},
 		{path: "/path3/123/asdf", ok: true, f: flag6, schema: "/path3/{slug}"},
 		{path: "/", ok: false, f: nil},
-		{path: "/path4/1s2a3", ok: false, f: nil},
+
 		{path: "/path4/123", ok: true, f: flag7, schema: "/path4/{id:[0-9]+}"},
 		{path: "/path4/123/123", ok: false, f: nil},
 		{path: "/path4/123/john", ok: true, f: flag8, schema: "/path4/{id:[0-9]+}/{slug:[a-z]+}"},
@@ -572,24 +573,26 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 func TestFindHandlerWithDynamicAndParameters(t *testing.T) {
 	tree := Tree{}
 
+	h := func(response http.ResponseWriter, request *http.Request) {}
+
 	parser := NewParser("/path1/{id}")
 	_, _ = parser.parse()
-	tree.Insert(http.MethodGet, parser.chunks, nil)
+	tree.Insert(http.MethodGet, parser.chunks, h)
 	parser = NewParser("/path1/{id}/path2/{slug}")
 	_, _ = parser.parse()
-	tree.Insert(http.MethodGet, parser.chunks, nil)
+	tree.Insert(http.MethodGet, parser.chunks, h)
 	parser = NewParser("/path1")
 	_, _ = parser.parse()
-	tree.Insert(http.MethodGet, parser.chunks, nil)
+	tree.Insert(http.MethodGet, parser.chunks, h)
 	parser = NewParser("/data1/{id}/data2/{id}")
 	_, _ = parser.parse()
-	tree.Insert(http.MethodGet, parser.chunks, nil)
+	tree.Insert(http.MethodGet, parser.chunks, h)
 
 	data := []findResultWithParams{
 		{path: "/path1/123", ok: true, keys: []string{"id"}, values: []string{"123"}},
-		{path: "/path1/123/path2/this-is-a-slug", ok: true, keys: []string{"id", "slug"}, values: []string{"123", "this-is-a-slug"}},
+		{path: "/path1/123/path2/this-is-a-slug", ok: true, keys: []string{"slug", "id"}, values: []string{"this-is-a-slug", "123"}},
 		{path: "/path1", ok: true, keys: []string{}, values: []string{}},
-		{path: "/data1/123/data2/456", keys: []string{"id", "id"}, values: []string{"123", "456"}},
+		{path: "/data1/123/data2/456", keys: []string{"id", "id"}, values: []string{"456", "123"}},
 		{path: "/", ok: false, keys: []string{}, values: []string{}},
 	}
 

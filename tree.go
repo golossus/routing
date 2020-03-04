@@ -144,55 +144,72 @@ func (t *Tree) Find(verb string, path string) (HandlerFunction, UrlParameterBag)
 	}
 	p := path
 
-	for nil != n && len(p) > 0 {
+	return find(n, p, &urlParameterBag), urlParameterBag
+}
 
-		if n.t == NodeTypeDynamic {
-			found := false
-			for i, ch := range p {
-				if next, ok := n.stops[string(ch)]; ok {
-					validExpression := true
-					if n.regexp != nil {
-						validExpression = n.regexp.MatchString(p[0:i])
-					}
-					if validExpression {
-						urlParameter := urlParameter{name: n.prefix, value: p[0:i]}
-						urlParameterBag.addParameter(urlParameter)
-						n = next
-						p = p[i:]
-						found = true
-						break
-					}
-				}
-			}
-			if !found {
+func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
+	if nil == n || len(p) == 0 {
+		return nil
+	}
+
+	if n.t == NodeTypeDynamic {
+		traversed := false
+		for i, ch := range p {
+			if next, ok := n.stops[string(ch)]; ok {
 				validExpression := true
 				if n.regexp != nil {
-					validExpression = n.regexp.MatchString(p)
+					validExpression = n.regexp.MatchString(p[0:i])
 				}
 				if validExpression {
-					urlParameter := urlParameter{name: n.prefix, value: p}
-					urlParameterBag.addParameter(urlParameter)
-					return n.handler, urlParameterBag
+					traversed = true
+					h := find(next, p[i:], urlParameterBag)
+					if nil != h {
+						urlParameter := urlParameter{name: n.prefix, value: p[0:i]}
+						urlParameterBag.addParameter(urlParameter)
+						return h
+					}
 				}
-				return nil, urlParameterBag
 			}
 		}
 
-		pos := common(p, n.prefix)
-		if pos == 0 {
-			n = n.sibling
+		if nil != n.handler && !traversed {
+			validExpression := true
+			if n.regexp != nil {
+				validExpression = n.regexp.MatchString(p)
+			}
+			if validExpression {
+				urlParameter := urlParameter{name: n.prefix, value: p}
+				urlParameterBag.addParameter(urlParameter)
+				return n.handler
+			}
+		}
+
+		return find(n.sibling, p, urlParameterBag)
+	}
+
+	pos := common(p, n.prefix)
+	if pos == 0 {
+		return find(n.sibling, p, urlParameterBag)
+	}
+
+	if pos == len(p) && len(p) == len(n.prefix) {
+		return n.handler
+	}
+
+	h := find(n.child, p[pos:], urlParameterBag)
+	if nil != h {
+		return h
+	}
+
+	for next := n.sibling; nil != next; next = next.sibling {
+		if next.t != NodeTypeDynamic {
 			continue
 		}
 
-		if pos == len(p) && len(p) == len(n.prefix) {
-			return n.handler, urlParameterBag
-		}
-
-		p = p[pos:]
-		n = n.child
+		return find(next, p, urlParameterBag)
 	}
 
-	return nil, urlParameterBag
+	return nil
 }
 
 type Node struct {
