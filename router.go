@@ -5,6 +5,14 @@ import (
 	"net/http"
 )
 
+type paramsKey int
+
+var ctxKey paramsKey
+
+func GetUrlParameters(request *http.Request) UrlParameterBag {
+	return request.Context().Value(ctxKey).(UrlParameterBag)
+}
+
 type HandlerFunction func(http.ResponseWriter, *http.Request)
 
 type Router interface {
@@ -76,7 +84,7 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 	}
 
 	ctx := context.Background()
-	handler(response, request.WithContext(context.WithValue(ctx, ParamsBagKey, params)))
+	handler(response, request.WithContext(context.WithValue(ctx, ctxKey, params)))
 }
 
 func (r *PrefixTreeRouter) Head(path string, handler HandlerFunction) {

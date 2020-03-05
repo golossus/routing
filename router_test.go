@@ -201,16 +201,16 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 	router := PrefixTreeRouter{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {
-		urlParameterBag := request.Context().Value(ParamsBagKey).(UrlParameterBag)
+		urlParameterBag := GetUrlParameters(request)
 		if 2 != len(urlParameterBag.params) {
 			t.Errorf("")
 		}
-		id := urlParameterBag.GetByName("id", "0")
+		id, _ := urlParameterBag.GetByName("id")
 		if "100" != id {
 			t.Errorf("")
 		}
 
-		name := urlParameterBag.GetByName("name", "")
+		name, _ := urlParameterBag.GetByName("name")
 		if "dummy" != name {
 			t.Errorf("")
 		}
@@ -401,5 +401,4 @@ func TestVerbsMethodsAreWorking(t *testing.T) {
 	if flag != 9 {
 		t.Errorf("")
 	}
-
 }
