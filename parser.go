@@ -17,7 +17,7 @@ type token struct {
 }
 
 type Parser struct {
-	lexer  *Lexer
+	lexer  *lexer
 	last   token
 	chunks []chunk
 	buf    bytes.Buffer
@@ -30,7 +30,7 @@ type chunk struct {
 }
 
 func NewParser(path string) *Parser {
-	l := NewLexer(path)
+	l := newLexer(path)
 
 	return &Parser{lexer: l, chunks: make([]chunk, 0, 3)}
 }

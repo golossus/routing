@@ -3,7 +3,7 @@ package http_router
 import "testing"
 
 func TestSimplePath(t *testing.T) {
-	lexer := NewLexer("/path1")
+	lexer := newLexer("/path1")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -15,7 +15,7 @@ func TestSimplePath(t *testing.T) {
 }
 
 func TestDoubleStatic(t *testing.T) {
-	lexer := NewLexer("/path1/path2")
+	lexer := newLexer("/path1/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -29,7 +29,7 @@ func TestDoubleStatic(t *testing.T) {
 }
 
 func TestHome(t *testing.T) {
-	lexer := NewLexer("/")
+	lexer := newLexer("/")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -40,7 +40,7 @@ func TestHome(t *testing.T) {
 }
 
 func TestEndSlash(t *testing.T) {
-	lexer := NewLexer("/path1/")
+	lexer := newLexer("/path1/")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -53,7 +53,7 @@ func TestEndSlash(t *testing.T) {
 }
 
 func TestWithParameter(t *testing.T) {
-	lexer := NewLexer("/path1/{id}/path2")
+	lexer := newLexer("/path1/{id}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -71,7 +71,7 @@ func TestWithParameter(t *testing.T) {
 }
 
 func TestInvalidRoute(t *testing.T) {
-	lexer := NewLexer("/path1/{id/path2")
+	lexer := newLexer("/path1/{id/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -88,7 +88,7 @@ func TestInvalidRoute(t *testing.T) {
 }
 
 func TestInvalidRouteMissingOpen(t *testing.T) {
-	lexer := NewLexer("/path1/id}/path2")
+	lexer := newLexer("/path1/id}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -105,7 +105,7 @@ func TestInvalidRouteMissingOpen(t *testing.T) {
 }
 
 func TestWithEmptyVar(t *testing.T) {
-	lexer := NewLexer("/path1/{}/path2")
+	lexer := newLexer("/path1/{}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -122,7 +122,7 @@ func TestWithEmptyVar(t *testing.T) {
 }
 
 func TestWithDoubleOpenVar(t *testing.T) {
-	lexer := NewLexer("/path1/{{id}/path2")
+	lexer := newLexer("/path1/{{id}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -141,7 +141,7 @@ func TestWithDoubleOpenVar(t *testing.T) {
 }
 
 func TestWithFinalDoubleOpenVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}/path2{")
+	lexer := newLexer("/path1/{id}/path2{")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -160,7 +160,7 @@ func TestWithFinalDoubleOpenVar(t *testing.T) {
 }
 
 func TestWithDoubleCloseVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}}/path2")
+	lexer := newLexer("/path1/{id}}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -179,7 +179,7 @@ func TestWithDoubleCloseVar(t *testing.T) {
 }
 
 func TestWithStaticValueAfterCloseVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}_name/path2")
+	lexer := newLexer("/path1/{id}_name/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
@@ -198,7 +198,7 @@ func TestWithStaticValueAfterCloseVar(t *testing.T) {
 }
 
 func TestWithExpRegular(t *testing.T) {
-	lexer := NewLexer("/path1/{id:[0-9]{4}-[0-9]{4}}")
+	lexer := newLexer("/path1/{id:[0-9]{4}-[0-9]{4}}")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
