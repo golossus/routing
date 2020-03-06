@@ -5,182 +5,8 @@ import (
 	"testing"
 )
 
-func TestSliceIsNilOnCreation(t *testing.T) {
-	router := SliceRouter{}
-	if nil != router.handlers {
-		t.Errorf("SliceRouter is not empty on creation")
-	}
-}
-
-func TestSliceAddOneRouteHandler(t *testing.T) {
-	router := SliceRouter{}
-	flag := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	router.AddHandler(http.MethodGet, "/path1", f)
-
-	if nil == router.handlers {
-		t.Errorf("SliceRouter is empty")
-	}
-
-	if "/path1" != router.handlers[0].path {
-		t.Errorf("Path not valid")
-	}
-
-	if nil == router.handlers[0].handler {
-		t.Errorf("Handler not valid")
-	}
-
-	router.handlers[0].handler(nil, nil)
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-}
-
-func TestSliceAddSeveralRoutesHandler(t *testing.T) {
-	router := SliceRouter{}
-	flag := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	router.AddHandler(http.MethodGet, "/path1", nil)
-	router.AddHandler(http.MethodGet, "/path2", f)
-
-	if 2 != len(router.handlers) {
-		t.Errorf("Invalid size")
-	}
-
-	if "/path1" != router.handlers[0].path {
-		t.Errorf("Path not valid")
-	}
-
-	if nil != router.handlers[0].handler {
-		t.Errorf("Handler not valid")
-	}
-
-	if "/path2" != router.handlers[1].path {
-		t.Errorf("Path not valid")
-	}
-
-	if nil == router.handlers[1].handler {
-		t.Errorf("Handler not valid")
-	}
-
-	router.handlers[1].handler(nil, nil)
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-}
-
-func TestSliceRouteMatch(t *testing.T) {
-	router := SliceRouter{}
-	flag := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	router.AddHandler(http.MethodGet, "/path1", nil)
-	router.AddHandler(http.MethodGet, "/path2", f)
-
-	request, _ := http.NewRequest("GET", "/path2", nil)
-	router.ServeHTTP(nil, request)
-
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-}
-
-func TestMapIsNilOnCreation(t *testing.T) {
-	router := MapRouter{}
-	if nil != router.handlers {
-		t.Errorf("MapRouter is not empty on creation")
-	}
-}
-
-func TestMapAddOneRouteHandler(t *testing.T) {
-	router := MapRouter{}
-	flag := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	router.AddHandler(http.MethodGet, "/path1", f)
-
-	if nil == router.handlers {
-		t.Errorf("MapRouter is empty")
-	}
-
-	handler, found := router.handlers["/path1"]
-	if !found {
-		t.Errorf("Path not valid")
-	}
-
-	if nil == handler {
-		t.Errorf("Handler not valid")
-	}
-
-	handler(nil, nil)
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-}
-
-func TestMapAddSeveralRoutesHandler(t *testing.T) {
-	router := MapRouter{}
-	flag := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	router.AddHandler(http.MethodGet, "/path1", nil)
-	router.AddHandler(http.MethodGet, "/path2", f)
-
-	if 2 != len(router.handlers) {
-		t.Errorf("Invalid size")
-	}
-
-	handler, found := router.handlers["/path1"]
-	if !found {
-		t.Errorf("Path not valid")
-	}
-
-	if nil != handler {
-		t.Errorf("Handler not valid")
-	}
-
-	handler, found = router.handlers["/path2"]
-	if !found {
-		t.Errorf("Path not valid")
-	}
-
-	if nil == handler {
-		t.Errorf("Handler not valid")
-	}
-
-	handler(nil, nil)
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-
-}
-
-func TestMapRouteMatch(t *testing.T) {
-	router := MapRouter{}
-	flag := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	router.AddHandler(http.MethodGet, "/path1", nil)
-	router.AddHandler(http.MethodGet, "/path2", f)
-
-	request, _ := http.NewRequest("GET", "/path2", nil)
-	router.ServeHTTP(nil, request)
-
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-}
-
-func TestPrefixTreeRouter(t *testing.T) {
-	router := PrefixTreeRouter{}
+func TestTreeRouter(t *testing.T) {
+	router := TreeRouter{}
 
 	flag := false
 	f := func(response http.ResponseWriter, request *http.Request) {
@@ -198,7 +24,7 @@ func TestPrefixTreeRouter(t *testing.T) {
 }
 
 func TestGetURLParamatersBagInHandler(t *testing.T) {
-	router := PrefixTreeRouter{}
+	router := TreeRouter{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {
 		urlParameterBag := GetUrlParameters(request)
@@ -230,7 +56,7 @@ func TestGetURLParamatersFailsIfRegExpFails(t *testing.T) {
 		}
 	}()
 
-	router := PrefixTreeRouter{}
+	router := TreeRouter{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {}
 	router.AddHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", f)
@@ -241,7 +67,7 @@ func TestGetURLParamatersFailsIfRegExpFails(t *testing.T) {
 }
 
 func TestVariosVerbsMatching(t *testing.T) {
-	router := PrefixTreeRouter{}
+	router := TreeRouter{}
 
 	flag := 0
 	f1 := func(response http.ResponseWriter, request *http.Request) {
@@ -304,7 +130,7 @@ func TestVariosVerbsMatching(t *testing.T) {
 }
 
 func TestVerbsMethodsAreWorking(t *testing.T) {
-	router := PrefixTreeRouter{}
+	router := TreeRouter{}
 
 	flag := 0
 	f1 := func(response http.ResponseWriter, request *http.Request) {

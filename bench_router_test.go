@@ -167,18 +167,8 @@ var testRoutes = []string{
 	"/progs/update.bash",
 }
 
-func BenchmarkSliceRouter(b *testing.B) {
-	router := SliceRouter{}
-	benchRouter(&router, b)
-}
-
-func BenchmarkMapRouter(b *testing.B) {
-	router := MapRouter{}
-	benchRouter(&router, b)
-}
-
-func BenchmarkPrefixTreeRouter(b *testing.B) {
-	router := PrefixTreeRouter{}
+func BenchmarkTreeRouter(b *testing.B) {
+	router := TreeRouter{}
 	benchRouter(&router, b)
 }
 
