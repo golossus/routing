@@ -19,7 +19,7 @@ func TestUrlParameterBagEmptyValuesOnCreation(t *testing.T) {
 }
 
 func TestNewUrlParameterBagSetsRightValuesOnCreation(t *testing.T) {
-	bag := NewUrlParameterBag(5, true)
+	bag := newUrlParameterBag(5, true)
 
 	if bag.params != nil {
 		t.Errorf("")
@@ -37,7 +37,7 @@ func TestNewUrlParameterBagSetsRightValuesOnCreation(t *testing.T) {
 func TestUrlParameterBagAddsParameter(t *testing.T) {
 	bag := UrlParameterBag{}
 
-	bag.Add("param1", "v1")
+	bag.add("param1", "v1")
 
 	if bag.params == nil {
 		t.Errorf("")
@@ -55,8 +55,8 @@ func TestUrlParameterBagAddsParameter(t *testing.T) {
 func TestUrlParameterBagAddsMultipleParameters(t *testing.T) {
 	bag := UrlParameterBag{}
 
-	bag.Add("param1", "v1")
-	bag.Add("param2", "v2")
+	bag.add("param1", "v1")
+	bag.add("param2", "v2")
 
 	if bag.params == nil {
 		t.Errorf("")
@@ -85,9 +85,9 @@ func TestUrlParameterBagAddsMultipleParameters(t *testing.T) {
 func TestUrlParameterBagGetByName(t *testing.T) {
 	bag := UrlParameterBag{}
 
-	bag.Add("param1", "v1")
-	bag.Add("param2", "v2")
-	bag.Add("param3", "v3")
+	bag.add("param1", "v1")
+	bag.add("param2", "v2")
+	bag.add("param3", "v3")
 
 	if bag.params == nil {
 		t.Errorf("")
@@ -122,10 +122,10 @@ func TestUrlParameterBagGetByName(t *testing.T) {
 func TestUrlParameterBagGetByNameInReverseMode(t *testing.T) {
 	bag := UrlParameterBag{reverse: true}
 
-	bag.Add("param1", "v1")
-	bag.Add("param2", "v2")
-	bag.Add("param3", "v3")
-	bag.Add("param1", "v4")
+	bag.add("param1", "v1")
+	bag.add("param2", "v2")
+	bag.add("param3", "v3")
+	bag.add("param1", "v4")
 
 	if bag.params == nil {
 		t.Errorf("")
@@ -160,9 +160,9 @@ func TestUrlParameterBagGetByNameInReverseMode(t *testing.T) {
 func TestUrlParameterBagGetByIndex(t *testing.T) {
 	bag := UrlParameterBag{}
 
-	bag.Add("param1", "v1")
-	bag.Add("param2", "v2")
-	bag.Add("param3", "v3")
+	bag.add("param1", "v1")
+	bag.add("param2", "v2")
+	bag.add("param3", "v3")
 
 	if bag.params == nil {
 		t.Errorf("")
@@ -196,9 +196,9 @@ func TestUrlParameterBagGetByIndex(t *testing.T) {
 func TestUrlParameterBagGetByIndexInReverseMode(t *testing.T) {
 	bag := UrlParameterBag{reverse: true}
 
-	bag.Add("param3", "v3")
-	bag.Add("param2", "v2")
-	bag.Add("param1", "v1")
+	bag.add("param3", "v3")
+	bag.add("param2", "v2")
+	bag.add("param1", "v1")
 
 	if bag.params == nil {
 		t.Errorf("")

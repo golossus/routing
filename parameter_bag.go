@@ -15,7 +15,7 @@ type UrlParameterBag struct {
 	reverse  bool
 }
 
-func (u *UrlParameterBag) Add(name, value string) {
+func (u *UrlParameterBag) add(name, value string) {
 	if u.params == nil {
 		u.params = make([]urlParameter, 0, u.capacity)
 	}
@@ -49,7 +49,7 @@ func (u *UrlParameterBag) GetByIndex(index uint) (string, error) {
 	return u.params[i].value, nil
 }
 
-func NewUrlParameterBag(capacity uint, reverse bool) UrlParameterBag {
+func newUrlParameterBag(capacity uint, reverse bool) UrlParameterBag {
 	return UrlParameterBag{
 		capacity: capacity,
 		reverse:  reverse,
