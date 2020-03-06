@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	TChunkStatic = iota
-	TChunkDynamic
+	tChunkStatic = iota
+	tChunkDynamic
 )
 
 type token struct {
@@ -69,7 +69,7 @@ func (p *parser) parseVar() (bool, error) {
 	if !isCloseVarToken(token) {
 		return false, fmt.Errorf("parser error, expected %s but got %s", "}", token.v)
 	}
-	p.chunks = append(p.chunks, chunk{t: TChunkDynamic, v: p.buf.String(), exp: regExp})
+	p.chunks = append(p.chunks, chunk{t: tChunkDynamic, v: p.buf.String(), exp: regExp})
 	p.buf.Reset()
 
 	token = p.lexer.scan()
@@ -91,7 +91,7 @@ func (p *parser) parseStatic() (bool, error) {
 	token := p.lexer.scan()
 
 	if isEndToken(token) {
-		p.chunks = append(p.chunks, chunk{t: TChunkStatic, v: p.buf.String()})
+		p.chunks = append(p.chunks, chunk{t: tChunkStatic, v: p.buf.String()})
 		p.buf.Reset()
 		return true, nil
 	}
@@ -104,7 +104,7 @@ func (p *parser) parseStatic() (bool, error) {
 	}
 
 	if isOpenVarToken(token) {
-		p.chunks = append(p.chunks, chunk{t: TChunkStatic, v: p.buf.String()})
+		p.chunks = append(p.chunks, chunk{t: tChunkStatic, v: p.buf.String()})
 		p.buf.Reset()
 
 		return p.parseVar()
@@ -114,29 +114,29 @@ func (p *parser) parseStatic() (bool, error) {
 }
 
 func isSlashToken(t token) bool {
-	return t.t == TSlash
+	return t.t == tSlash
 }
 
 func isOpenVarToken(t token) bool {
-	return t.t == TOpenVar
+	return t.t == tOpenVar
 }
 
 func isCloseVarToken(t token) bool {
-	return t.t == TCloseVar
+	return t.t == tCloseVar
 }
 
 func isVarToken(t token) bool {
-	return t.t == TVar
+	return t.t == tVar
 }
 
 func isRegExpressionToken(t token) bool {
-	return t.t == TExpReg
+	return t.t == tExpReg
 }
 
 func isEndToken(t token) bool {
-	return t.t == TEnd
+	return t.t == tEnd
 }
 
 func isStaticToken(t token) bool {
-	return t.t == TStatic
+	return t.t == tStatic
 }

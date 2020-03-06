@@ -21,11 +21,11 @@ type Router interface {
 }
 
 type TreeRouter struct {
-	tree Tree
+	tree tree
 }
 
 func (r *TreeRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	handler, params := r.tree.Find(request.Method, request.URL.Path)
+	handler, params := r.tree.find(request.Method, request.URL.Path)
 	if handler == nil {
 		http.NotFound(response, request)
 		return
@@ -95,5 +95,5 @@ func (r *TreeRouter) AddHandler(verb, path string, handler HandlerFunction) {
 		panic(err)
 	}
 
-	r.tree.Insert(verb, parser.chunks, handler)
+	r.tree.insert(verb, parser.chunks, handler)
 }

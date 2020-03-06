@@ -6,15 +6,15 @@ import (
 )
 
 const (
-	NodeTypeStatic = iota
-	NodeTypeDynamic
+	nodeTypeStatic = iota
+	nodeTypeDynamic
 )
 
-type Tree struct {
-	root map[string]*Node
+type tree struct {
+	root map[string]*node
 }
 
-func (t *Tree) Insert(verb string, chunks []chunk, handler HandlerFunction) {
+func (t *tree) insert(verb string, chunks []chunk, handler HandlerFunction) {
 
 	subtree, err := createTreeFromChunks(chunks, handler)
 	if err != nil {
@@ -22,13 +22,13 @@ func (t *Tree) Insert(verb string, chunks []chunk, handler HandlerFunction) {
 	}
 
 	if nil == t.root {
-		t.root = make(map[string]*Node)
+		t.root = make(map[string]*node)
 	}
 
 	t.root[verb] = combine(t.root[verb], subtree)
 }
 
-func combine(tree1 *Node, tree2 *Node) *Node {
+func combine(tree1 *node, tree2 *node) *node {
 
 	if tree1 == nil {
 		return tree2
@@ -38,8 +38,8 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 		return tree1
 	}
 
-	if tree1.t == NodeTypeDynamic {
-		if tree2.t == NodeTypeDynamic && tree2.prefix == tree1.prefix {
+	if tree1.t == nodeTypeDynamic {
+		if tree2.t == nodeTypeDynamic && tree2.prefix == tree1.prefix {
 			for k, v := range tree1.stops {
 				tree2.stops[k] = v
 			}
@@ -48,18 +48,18 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 			return tree1
 		}
 
-		if tree2.t == NodeTypeDynamic && tree2.prefix != tree1.prefix {
+		if tree2.t == nodeTypeDynamic && tree2.prefix != tree1.prefix {
 			tree1.sibling = combine(tree1.sibling, tree2)
 			return tree1
 		}
 
-		if tree2.t == NodeTypeStatic {
+		if tree2.t == nodeTypeStatic {
 			tree2.sibling = tree1
 			return tree2
 		}
 	}
 
-	if tree2.t == NodeTypeDynamic {
+	if tree2.t == nodeTypeDynamic {
 		tree1.sibling = combine(tree1.sibling, tree2)
 		return tree1
 	}
@@ -84,7 +84,7 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 	}
 
 	if pos != len(tree1.prefix) && pos != len(tree2.prefix) {
-		split := createNodeFromChunk(chunk{t: TChunkStatic, v: tree1.prefix[:pos]})
+		split := createNodeFromChunk(chunk{t: tChunkStatic, v: tree1.prefix[:pos]})
 		split.sibling = tree1.sibling
 
 		tree1.prefix = tree1.prefix[pos:]
@@ -100,7 +100,7 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 	return tree1
 }
 
-func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error) {
+func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*node, error) {
 
 	if len(chunks) < 1 {
 		return nil, fmt.Errorf("chunks can not be empty")
@@ -111,7 +111,7 @@ func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error
 
 	for i := 1; i < len(chunks); i++ {
 		newNode := createNodeFromChunk(chunks[i])
-		if n.t == NodeTypeDynamic {
+		if n.t == nodeTypeDynamic {
 			n.stops[newNode.prefix[0:1]] = newNode
 		}
 		n.child = newNode
@@ -123,19 +123,19 @@ func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error
 	return root, nil
 }
 
-func createNodeFromChunk(c chunk) *Node {
-	var n *Node
-	if c.t == TChunkStatic {
-		n = &Node{prefix: c.v, handler: nil, t: NodeTypeStatic}
+func createNodeFromChunk(c chunk) *node {
+	var n *node
+	if c.t == tChunkStatic {
+		n = &node{prefix: c.v, handler: nil, t: nodeTypeStatic}
 	} else {
-		stops := make(map[string]*Node)
+		stops := make(map[string]*node)
 
-		n = &Node{prefix: c.v, t: NodeTypeDynamic, handler: nil, stops: stops, regexp: c.exp}
+		n = &node{prefix: c.v, t: nodeTypeDynamic, handler: nil, stops: stops, regexp: c.exp}
 	}
 	return n
 }
 
-func (t *Tree) Find(verb string, path string) (HandlerFunction, UrlParameterBag) {
+func (t *tree) find(verb string, path string) (HandlerFunction, UrlParameterBag) {
 	urlParameterBag := newUrlParameterBag(5, true)
 
 	n, ok := t.root[verb]
@@ -147,12 +147,12 @@ func (t *Tree) Find(verb string, path string) (HandlerFunction, UrlParameterBag)
 	return find(n, p, &urlParameterBag), urlParameterBag
 }
 
-func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
+func find(n *node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 	if nil == n || len(p) == 0 {
 		return nil
 	}
 
-	if n.t == NodeTypeDynamic {
+	if n.t == nodeTypeDynamic {
 		traversed := false
 		for i, ch := range p {
 			if next, ok := n.stops[string(ch)]; ok {
@@ -200,7 +200,7 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 	}
 
 	for next := n.sibling; nil != next; next = next.sibling {
-		if next.t != NodeTypeDynamic {
+		if next.t != nodeTypeDynamic {
 			continue
 		}
 
@@ -210,13 +210,13 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 	return nil
 }
 
-type Node struct {
+type node struct {
 	prefix  string
 	handler HandlerFunction
-	child   *Node
-	sibling *Node
+	child   *node
+	sibling *node
 	t       int
-	stops   map[string]*Node
+	stops   map[string]*node
 	regexp  *regexp.Regexp
 }
 

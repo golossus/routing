@@ -7,18 +7,18 @@ import (
 )
 
 const (
-	TSlash = iota
-	TStatic
-	TOpenVar
-	TVar
-	TCloseVar
-	TEnd
-	TExpReg
+	tSlash = iota
+	tStatic
+	tOpenVar
+	tVar
+	tCloseVar
+	tEnd
+	tExpReg
 )
 
 const (
-	TModeStatic = iota
-	TModeIdentifier
+	tModeStatic = iota
+	tModeIdentifier
 )
 
 type lexer struct {
@@ -28,7 +28,7 @@ type lexer struct {
 
 func newLexer(path string) *lexer {
 	reader := strings.NewReader(path)
-	return &lexer{buf: bufio.NewReader(reader), mode: TModeStatic}
+	return &lexer{buf: bufio.NewReader(reader), mode: tModeStatic}
 }
 
 func (l *lexer) scan() token {
@@ -38,8 +38,8 @@ func (l *lexer) scan() token {
 		return createEndToken()
 	}
 
-	if l.mode == TModeIdentifier {
-		l.mode = TModeStatic
+	if l.mode == tModeIdentifier {
+		l.mode = tModeStatic
 
 		if isIdentifierRune(ch) {
 			_ = l.buf.UnreadRune()
@@ -62,7 +62,7 @@ func (l *lexer) scan() token {
 	}
 
 	if isOpenBrace(ch) {
-		l.mode = TModeIdentifier
+		l.mode = tModeIdentifier
 		return createOpenVarToken()
 	}
 	_ = l.buf.UnreadRune()
@@ -144,7 +144,7 @@ func (l *lexer) scanAll() []token {
 	for {
 		token := l.scan()
 		tokens = append(tokens, token)
-		if TEnd == token.t {
+		if tEnd == token.t {
 			break
 		}
 	}
@@ -152,31 +152,31 @@ func (l *lexer) scanAll() []token {
 }
 
 func createSlashToken() token {
-	return token{t: TSlash, v: "/"}
+	return token{t: tSlash, v: "/"}
 }
 
 func createStaticToken(value string) token {
-	return token{t: TStatic, v: value}
+	return token{t: tStatic, v: value}
 }
 
 func createOpenVarToken() token {
-	return token{t: TOpenVar, v: "{"}
+	return token{t: tOpenVar, v: "{"}
 }
 
 func createVarToken(value string) token {
-	return token{t: TVar, v: value}
+	return token{t: tVar, v: value}
 }
 
 func createExpRegularToken(value string) token {
-	return token{t: TExpReg, v: value}
+	return token{t: tExpReg, v: value}
 }
 
 func createCloseVarToken() token {
-	return token{t: TCloseVar, v: "}"}
+	return token{t: tCloseVar, v: "}"}
 }
 
 func createEndToken() token {
-	return token{t: TEnd, v: ""}
+	return token{t: tEnd, v: ""}
 }
 
 func isSlash(ch rune) bool {
