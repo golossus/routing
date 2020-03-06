@@ -197,110 +197,20 @@ func TestPrefixTreeRouter(t *testing.T) {
 	}
 }
 
-func TestUrlParameterBagEmptyOnCreation(t *testing.T) {
-	bag := NewUrlParameterBag()
-
-	if bag.params != nil {
-		t.Errorf("")
-	}
-}
-
-func TestUrlParameterBagAddsParameter(t *testing.T) {
-	bag := NewUrlParameterBag()
-
-	bag.addParameter(urlParameter{name: "param1", value: "v1"})
-
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) == 0 {
-		t.Errorf("")
-	}
-
-	if bag.params[0].name != "param1" {
-		t.Errorf("")
-	}
-}
-
-func TestUrlParameterBagGetByName(t *testing.T) {
-	bag := NewUrlParameterBag()
-
-	bag.addParameter(urlParameter{name: "param1", value: "v1"})
-	bag.addParameter(urlParameter{name: "param2", value: "v2"})
-	bag.addParameter(urlParameter{name: "param3", value: "v3"})
-
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) != 3 {
-		t.Errorf("")
-	}
-
-	if bag.GetByName("param1", "") != "v1" {
-		t.Errorf("")
-	}
-
-	if bag.GetByName("param2", "") != "v2" {
-		t.Errorf("")
-	}
-
-	if bag.GetByName("param3", "") != "v3" {
-		t.Errorf("")
-	}
-
-	if bag.GetByName("param4", "v4") != "v4" {
-		t.Errorf("")
-	}
-}
-
-func TestUrlParameterBagGetByIndex(t *testing.T) {
-	bag := NewUrlParameterBag()
-
-	bag.addParameter(urlParameter{name: "param1", value: "v1"})
-	bag.addParameter(urlParameter{name: "param2", value: "v2"})
-	bag.addParameter(urlParameter{name: "param3", value: "v3"})
-
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) != 3 {
-		t.Errorf("")
-	}
-
-	if bag.GetByIndex(0, "") != "v1" {
-		t.Errorf("")
-	}
-
-	if bag.GetByIndex(1, "") != "v2" {
-		t.Errorf("")
-	}
-
-	if bag.GetByIndex(2, "") != "v3" {
-		t.Errorf("")
-	}
-
-	if bag.GetByIndex(3, "v4") != "v4" {
-		t.Errorf("")
-	}
-}
-
 func TestGetURLParamatersBagInHandler(t *testing.T) {
 	router := PrefixTreeRouter{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {
-		urlParameterBag := request.Context().Value(ParamsBagKey).(UrlParameterBag)
+		urlParameterBag := GetUrlParameters(request)
 		if 2 != len(urlParameterBag.params) {
 			t.Errorf("")
 		}
-		id := urlParameterBag.GetByName("id", "0")
+		id, _ := urlParameterBag.GetByName("id")
 		if "100" != id {
 			t.Errorf("")
 		}
 
-		name := urlParameterBag.GetByName("name", "")
+		name, _ := urlParameterBag.GetByName("name")
 		if "dummy" != name {
 			t.Errorf("")
 		}
@@ -491,5 +401,4 @@ func TestVerbsMethodsAreWorking(t *testing.T) {
 	if flag != 9 {
 		t.Errorf("")
 	}
-
 }

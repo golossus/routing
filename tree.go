@@ -136,7 +136,7 @@ func createNodeFromChunk(c chunk) *Node {
 }
 
 func (t *Tree) Find(verb string, path string) (HandlerFunction, UrlParameterBag) {
-	urlParameterBag := NewUrlParameterBag()
+	urlParameterBag := NewUrlParameterBag(5, true)
 
 	n, ok := t.root[verb]
 	if !ok {
@@ -164,8 +164,7 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 					traversed = true
 					h := find(next, p[i:], urlParameterBag)
 					if nil != h {
-						urlParameter := urlParameter{name: n.prefix, value: p[0:i]}
-						urlParameterBag.addParameter(urlParameter)
+						urlParameterBag.Add(n.prefix, p[0:i])
 						return h
 					}
 				}
@@ -178,8 +177,7 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 				validExpression = n.regexp.MatchString(p)
 			}
 			if validExpression {
-				urlParameter := urlParameter{name: n.prefix, value: p}
-				urlParameterBag.addParameter(urlParameter)
+				urlParameterBag.Add(n.prefix, p)
 				return n.handler
 			}
 		}

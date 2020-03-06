@@ -5,6 +5,14 @@ import (
 	"net/http"
 )
 
+type paramsKey int
+
+var ctxKey paramsKey
+
+func GetUrlParameters(request *http.Request) UrlParameterBag {
+	return request.Context().Value(ctxKey).(UrlParameterBag)
+}
+
 type HandlerFunction func(http.ResponseWriter, *http.Request)
 
 type Router interface {
@@ -68,10 +76,6 @@ type PrefixTreeRouter struct {
 	tree Tree
 }
 
-const (
-	ParamsBagKey = "urlParameters"
-)
-
 func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	handler, params := r.tree.Find(request.Method, request.URL.Path)
 	if handler == nil {
@@ -80,8 +84,7 @@ func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, ParamsBagKey, params)
-	handler(response, request.WithContext(ctx))
+	handler(response, request.WithContext(context.WithValue(ctx, ctxKey, params)))
 }
 
 func (r *PrefixTreeRouter) Head(path string, handler HandlerFunction) {
@@ -145,44 +148,4 @@ func (r *PrefixTreeRouter) AddHandler(verb, path string, handler HandlerFunction
 	}
 
 	r.tree.Insert(verb, parser.chunks, handler)
-}
-
-type urlParameter struct {
-	name  string
-	value string
-}
-
-type UrlParameterBag struct {
-	params []urlParameter
-}
-
-func (u *UrlParameterBag) addParameter(param urlParameter) {
-	if u.params == nil {
-		u.params = make([]urlParameter, 0, 5)
-	}
-
-	u.params = append(u.params, param)
-}
-
-func (u *UrlParameterBag) GetByName(name string, def string) string {
-	for _, item := range u.params {
-		if item.name == name {
-			return item.value
-		}
-	}
-
-	return def
-}
-
-func (u *UrlParameterBag) GetByIndex(index uint, def string) string {
-	i := int(index)
-	if len(u.params) <= i {
-		return def
-	}
-
-	return u.params[i].value
-}
-
-func NewUrlParameterBag() UrlParameterBag {
-	return UrlParameterBag{}
 }
