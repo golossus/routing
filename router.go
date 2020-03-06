@@ -89,7 +89,7 @@ func (r *TreeRouter) Any(path string, handler HandlerFunction) {
 }
 
 func (r *TreeRouter) AddHandler(verb, path string, handler HandlerFunction) {
-	parser := NewParser(path)
+	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
 		panic(err)

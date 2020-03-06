@@ -16,7 +16,7 @@ type token struct {
 	t int
 }
 
-type Parser struct {
+type parser struct {
 	lexer  *lexer
 	last   token
 	chunks []chunk
@@ -29,17 +29,17 @@ type chunk struct {
 	exp *regexp.Regexp
 }
 
-func NewParser(path string) *Parser {
+func newParser(path string) *parser {
 	l := newLexer(path)
 
-	return &Parser{lexer: l, chunks: make([]chunk, 0, 3)}
+	return &parser{lexer: l, chunks: make([]chunk, 0, 3)}
 }
 
-func (p *Parser) parse() (bool, error) {
+func (p *parser) parse() (bool, error) {
 	return p.parseStart()
 }
 
-func (p *Parser) parseStart() (bool, error) {
+func (p *parser) parseStart() (bool, error) {
 	token := p.lexer.scan()
 	if !isSlashToken(token) {
 		return false, fmt.Errorf("parser error, expected %s but got %s", "/", token.v)
@@ -49,7 +49,7 @@ func (p *Parser) parseStart() (bool, error) {
 	return p.parseStatic()
 }
 
-func (p *Parser) parseVar() (bool, error) {
+func (p *parser) parseVar() (bool, error) {
 	token := p.lexer.scan()
 
 	if !isVarToken(token) {
@@ -87,7 +87,7 @@ func (p *Parser) parseVar() (bool, error) {
 
 }
 
-func (p *Parser) parseStatic() (bool, error) {
+func (p *parser) parseStatic() (bool, error) {
 	token := p.lexer.scan()
 
 	if isEndToken(token) {
