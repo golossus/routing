@@ -112,7 +112,7 @@ func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error
 	for i := 1; i < len(chunks); i++ {
 		newNode := createNodeFromChunk(chunks[i])
 		if n.t == NodeTypeDynamic {
-			n.stops[newNode.prefix[0:1]] = newNode
+			n.stops[newNode.prefix[0]] = newNode
 		}
 		n.child = newNode
 		n = n.child
@@ -128,7 +128,7 @@ func createNodeFromChunk(c chunk) *Node {
 	if c.t == TChunkStatic {
 		n = &Node{prefix: c.v, handler: nil, t: NodeTypeStatic}
 	} else {
-		stops := make(map[string]*Node)
+		stops := make(map[byte]*Node)
 
 		n = &Node{prefix: c.v, t: NodeTypeDynamic, handler: nil, stops: stops, regexp: c.exp}
 	}
@@ -154,8 +154,8 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 
 	if n.t == NodeTypeDynamic {
 		traversed := false
-		for i, ch := range p {
-			if next, ok := n.stops[string(ch)]; ok {
+		for i := 0; i < len(p); i++ {
+			if next, ok := n.stops[p[i]]; ok {
 				validExpression := true
 				if n.regexp != nil {
 					validExpression = n.regexp.MatchString(p[0:i])
@@ -216,7 +216,7 @@ type Node struct {
 	child   *Node
 	sibling *Node
 	t       int
-	stops   map[string]*Node
+	stops   map[byte]*Node
 	regexp  *regexp.Regexp
 }
 

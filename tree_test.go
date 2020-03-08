@@ -117,7 +117,7 @@ func TestInsertDynamicChildHasNoHandler(t *testing.T) {
 		t.Errorf("")
 	}
 
-	child, ok := tree.root[http.MethodGet].child.stops["/"]
+	child, ok := tree.root[http.MethodGet].child.stops['/']
 
 	if !ok {
 		t.Errorf("")
@@ -156,15 +156,13 @@ func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 		t.Errorf("")
 	}
 
-	_, ok := tree.root[http.MethodGet].child.stops[""]
-
-	if ok {
+	if len(tree.root[http.MethodGet].child.stops) != 2 {
 		t.Errorf("")
 	}
 
 	var child, sibling *Node
 
-	child, ok = tree.root[http.MethodGet].child.stops["/"]
+	child, ok := tree.root[http.MethodGet].child.stops['/']
 
 	if !ok {
 		t.Errorf("")
@@ -178,7 +176,7 @@ func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 		t.Errorf("")
 	}
 
-	sibling, ok = tree.root[http.MethodGet].child.stops["-"]
+	sibling, ok = tree.root[http.MethodGet].child.stops['-']
 
 	if !ok {
 		t.Errorf("")
@@ -639,7 +637,7 @@ func TestCreateTreeFromChunksWorks(t *testing.T) {
 	if tree.prefix != "id" || tree.handler != nil || tree.t != NodeTypeDynamic || tree.child == nil {
 		t.Errorf("Invalid root node %v", tree)
 	}
-	if _, ok := tree.stops["/"]; !ok {
+	if _, ok := tree.stops['/']; !ok {
 		t.Errorf("Invalid stops %v for node %v", tree.stops, tree)
 	}
 
