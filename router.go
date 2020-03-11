@@ -73,11 +73,17 @@ func (r *MapRouter) AddHandler(verb string, path string, handler HandlerFunction
 }
 
 type PrefixTreeRouter struct {
-	tree Tree
+	trees map[string]*Tree
 }
 
 func (r *PrefixTreeRouter) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	handler, params := r.tree.Find(request.Method, request.URL.Path)
+	tree, ok := r.trees[request.Method]
+	if !ok {
+		http.NotFound(response, request)
+		return
+	}
+
+	handler, params := tree.Find(request.URL.Path)
 	if handler == nil {
 		http.NotFound(response, request)
 		return
@@ -147,5 +153,13 @@ func (r *PrefixTreeRouter) AddHandler(verb, path string, handler HandlerFunction
 		panic(err)
 	}
 
-	r.tree.Insert(verb, parser.chunks, handler)
+	if nil == r.trees {
+		r.trees = make(map[string]*Tree)
+	}
+
+	if _, ok := r.trees[verb]; !ok {
+		r.trees[verb] = &Tree{}
+	}
+
+	r.trees[verb].Insert(parser.chunks, handler)
 }

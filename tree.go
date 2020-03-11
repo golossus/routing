@@ -11,21 +11,17 @@ const (
 )
 
 type Tree struct {
-	root map[string]*Node
+	root *Node
 }
 
-func (t *Tree) Insert(verb string, chunks []chunk, handler HandlerFunction) {
+func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
 
 	subtree, err := createTreeFromChunks(chunks, handler)
 	if err != nil {
 		panic(err)
 	}
 
-	if nil == t.root {
-		t.root = make(map[string]*Node)
-	}
-
-	t.root[verb] = combine(t.root[verb], subtree)
+	t.root = combine(t.root, subtree)
 }
 
 func combine(tree1 *Node, tree2 *Node) *Node {
@@ -135,16 +131,10 @@ func createNodeFromChunk(c chunk) *Node {
 	return n
 }
 
-func (t *Tree) Find(verb string, path string) (HandlerFunction, UrlParameterBag) {
+func (t *Tree) Find(path string) (HandlerFunction, UrlParameterBag) {
 	urlParameterBag := NewUrlParameterBag(5, true)
 
-	n, ok := t.root[verb]
-	if !ok {
-		return nil, urlParameterBag
-	}
-	p := path
-
-	return find(n, p, &urlParameterBag), urlParameterBag
+	return find(t.root, path, &urlParameterBag), urlParameterBag
 }
 
 func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
