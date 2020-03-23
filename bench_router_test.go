@@ -1,4 +1,4 @@
-package http_router
+package routing
 
 import (
 	"net/http"
@@ -168,11 +168,11 @@ var testRoutes = []string{
 }
 
 func BenchmarkTreeRouter(b *testing.B) {
-	router := TreeRouter{}
+	router := Router{}
 	benchRouter(&router, b)
 }
 
-func benchRouter(router Router, b *testing.B) {
+func benchRouter(router *Router, b *testing.B) {
 	m := new(runtime.MemStats)
 	runtime.ReadMemStats(m)
 	before := m.HeapAlloc
@@ -201,5 +201,4 @@ func benchRouter(router Router, b *testing.B) {
 		router.ServeHTTP(nil, request2)
 		router.ServeHTTP(nil, request3)
 	}
-
 }

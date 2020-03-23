@@ -1,4 +1,4 @@
-package http_router
+package routing
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 )
 
 func TestTreeRouter(t *testing.T) {
-	router := TreeRouter{}
+	router := Router{}
 
 	flag := false
 	f := func(response http.ResponseWriter, request *http.Request) {
@@ -24,7 +24,7 @@ func TestTreeRouter(t *testing.T) {
 }
 
 func TestGetURLParamatersBagInHandler(t *testing.T) {
-	router := TreeRouter{}
+	router := Router{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {
 		urlParameterBag := GetUrlParameters(request)
@@ -56,7 +56,7 @@ func TestGetURLParamatersFailsIfRegExpFails(t *testing.T) {
 		}
 	}()
 
-	router := TreeRouter{}
+	router := Router{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {}
 	router.AddHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", f)
@@ -67,7 +67,7 @@ func TestGetURLParamatersFailsIfRegExpFails(t *testing.T) {
 }
 
 func TestVariosVerbsMatching(t *testing.T) {
-	router := TreeRouter{}
+	router := Router{}
 
 	flag := 0
 	f1 := func(response http.ResponseWriter, request *http.Request) {
@@ -130,7 +130,7 @@ func TestVariosVerbsMatching(t *testing.T) {
 }
 
 func TestVerbsMethodsAreWorking(t *testing.T) {
-	router := TreeRouter{}
+	router := Router{}
 
 	flag := 0
 	f1 := func(response http.ResponseWriter, request *http.Request) {
