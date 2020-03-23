@@ -1,215 +1,215 @@
-package http_router
+package routing
 
 import "testing"
 
 func TestSimplePath(t *testing.T) {
-	lexer := NewLexer("/path1")
+	lexer := newLexer("/path1")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestDoubleStatic(t *testing.T) {
-	lexer := NewLexer("/path1/path2")
+	lexer := newLexer("/path1/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestHome(t *testing.T) {
-	lexer := NewLexer("/")
+	lexer := newLexer("/")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestEndSlash(t *testing.T) {
-	lexer := NewLexer("/path1/")
+	lexer := newLexer("/path1/")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestWithParameter(t *testing.T) {
-	lexer := NewLexer("/path1/{id}/path2")
+	lexer := newLexer("/path1/{id}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "{", t: tOpenVar},
+		{v: "id", t: tVar},
+		{v: "}", t: tCloseVar},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestInvalidRoute(t *testing.T) {
-	lexer := NewLexer("/path1/{id/path2")
+	lexer := newLexer("/path1/{id/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "{", t: tOpenVar},
+		{v: "id", t: tVar},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestInvalidRouteMissingOpen(t *testing.T) {
-	lexer := NewLexer("/path1/id}/path2")
+	lexer := newLexer("/path1/id}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "id", t: TStatic},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "id", t: tStatic},
+		{v: "}", t: tCloseVar},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestWithEmptyVar(t *testing.T) {
-	lexer := NewLexer("/path1/{}/path2")
+	lexer := newLexer("/path1/{}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "{", t: tOpenVar},
+		{v: "}", t: tCloseVar},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestWithDoubleOpenVar(t *testing.T) {
-	lexer := NewLexer("/path1/{{id}/path2")
+	lexer := newLexer("/path1/{{id}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "{", t: tOpenVar},
+		{v: "{", t: tOpenVar},
+		{v: "id", t: tVar},
+		{v: "}", t: tCloseVar},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestWithFinalDoubleOpenVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}/path2{")
+	lexer := newLexer("/path1/{id}/path2{")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "{", t: TOpenVar},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "{", t: tOpenVar},
+		{v: "id", t: tVar},
+		{v: "}", t: tCloseVar},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "{", t: tOpenVar},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestWithDoubleCloseVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}}/path2")
+	lexer := newLexer("/path1/{id}}/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "}", t: TCloseVar},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "{", t: tOpenVar},
+		{v: "id", t: tVar},
+		{v: "}", t: tCloseVar},
+		{v: "}", t: tCloseVar},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestWithStaticValueAfterCloseVar(t *testing.T) {
-	lexer := NewLexer("/path1/{id}_name/path2")
+	lexer := newLexer("/path1/{id}_name/path2")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "}", t: TCloseVar},
-		{v: "_name", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "path2", t: TStatic},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "{", t: tOpenVar},
+		{v: "id", t: tVar},
+		{v: "}", t: tCloseVar},
+		{v: "_name", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "path2", t: tStatic},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }
 
 func TestWithExpRegular(t *testing.T) {
-	lexer := NewLexer("/path1/{id:[0-9]{4}-[0-9]{4}}")
+	lexer := newLexer("/path1/{id:[0-9]{4}-[0-9]{4}}")
 
 	tokens := lexer.scanAll()
 	expectedTokens := []token{
-		{v: "/", t: TSlash},
-		{v: "path1", t: TStatic},
-		{v: "/", t: TSlash},
-		{v: "{", t: TOpenVar},
-		{v: "id", t: TVar},
-		{v: "[0-9]{4}-[0-9]{4}", t: TExpReg},
-		{v: "}", t: TCloseVar},
-		{v: "", t: TEnd},
+		{v: "/", t: tSlash},
+		{v: "path1", t: tStatic},
+		{v: "/", t: tSlash},
+		{v: "{", t: tOpenVar},
+		{v: "id", t: tVar},
+		{v: "[0-9]{4}-[0-9]{4}", t: tExpReg},
+		{v: "}", t: tCloseVar},
+		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
 }

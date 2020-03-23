@@ -1,4 +1,4 @@
-package http_router
+package routing
 
 import (
 	"fmt"
@@ -6,25 +6,23 @@ import (
 )
 
 const (
-	NodeTypeStatic = iota
-	NodeTypeDynamic
+	nodeTypeStatic = iota
+	nodeTypeDynamic
 )
 
-type Tree struct {
-	root *Node
+type tree struct {
+	root *node
 }
 
-func (t *Tree) Insert(chunks []chunk, handler HandlerFunction) {
-
+func (t *tree) insert(chunks []chunk, handler HandlerFunction) {
 	subtree, err := createTreeFromChunks(chunks, handler)
 	if err != nil {
 		panic(err)
 	}
-
 	t.root = combine(t.root, subtree)
 }
 
-func combine(tree1 *Node, tree2 *Node) *Node {
+func combine(tree1 *node, tree2 *node) *node {
 
 	if tree1 == nil {
 		return tree2
@@ -34,8 +32,8 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 		return tree1
 	}
 
-	if tree1.t == NodeTypeDynamic {
-		if tree2.t == NodeTypeDynamic && tree2.prefix == tree1.prefix {
+	if tree1.t == nodeTypeDynamic {
+		if tree2.t == nodeTypeDynamic && tree2.prefix == tree1.prefix {
 			for k, v := range tree1.stops {
 				tree2.stops[k] = v
 			}
@@ -44,18 +42,18 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 			return tree1
 		}
 
-		if tree2.t == NodeTypeDynamic && tree2.prefix != tree1.prefix {
+		if tree2.t == nodeTypeDynamic && tree2.prefix != tree1.prefix {
 			tree1.sibling = combine(tree1.sibling, tree2)
 			return tree1
 		}
 
-		if tree2.t == NodeTypeStatic {
+		if tree2.t == nodeTypeStatic {
 			tree2.sibling = tree1
 			return tree2
 		}
 	}
 
-	if tree2.t == NodeTypeDynamic {
+	if tree2.t == nodeTypeDynamic {
 		tree1.sibling = combine(tree1.sibling, tree2)
 		return tree1
 	}
@@ -80,7 +78,7 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 	}
 
 	if pos != len(tree1.prefix) && pos != len(tree2.prefix) {
-		split := createNodeFromChunk(chunk{t: TChunkStatic, v: tree1.prefix[:pos]})
+		split := createNodeFromChunk(chunk{t: tChunkStatic, v: tree1.prefix[:pos]})
 		split.sibling = tree1.sibling
 
 		tree1.prefix = tree1.prefix[pos:]
@@ -96,7 +94,7 @@ func combine(tree1 *Node, tree2 *Node) *Node {
 	return tree1
 }
 
-func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error) {
+func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*node, error) {
 
 	if len(chunks) < 1 {
 		return nil, fmt.Errorf("chunks can not be empty")
@@ -107,7 +105,7 @@ func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error
 
 	for i := 1; i < len(chunks); i++ {
 		newNode := createNodeFromChunk(chunks[i])
-		if n.t == NodeTypeDynamic {
+		if n.t == nodeTypeDynamic {
 			n.stops[newNode.prefix[0]] = newNode
 		}
 		n.child = newNode
@@ -119,30 +117,30 @@ func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*Node, error
 	return root, nil
 }
 
-func createNodeFromChunk(c chunk) *Node {
-	var n *Node
-	if c.t == TChunkStatic {
-		n = &Node{prefix: c.v, handler: nil, t: NodeTypeStatic}
+func createNodeFromChunk(c chunk) *node {
+	var n *node
+	if c.t == tChunkStatic {
+		n = &node{prefix: c.v, handler: nil, t: nodeTypeStatic}
 	} else {
-		stops := make(map[byte]*Node)
+		stops := make(map[byte]*node)
 
-		n = &Node{prefix: c.v, t: NodeTypeDynamic, handler: nil, stops: stops, regexp: c.exp}
+		n = &node{prefix: c.v, t: nodeTypeDynamic, handler: nil, stops: stops, regexp: c.exp}
 	}
 	return n
 }
 
-func (t *Tree) Find(path string) (HandlerFunction, UrlParameterBag) {
-	urlParameterBag := NewUrlParameterBag(5, true)
+func (t *tree) find(path string) (HandlerFunction, UrlParameterBag) {
+	urlParameterBag := newUrlParameterBag(5, true)
 
 	return find(t.root, path, &urlParameterBag), urlParameterBag
 }
 
-func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
+func find(n *node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 	if nil == n || len(p) == 0 {
 		return nil
 	}
 
-	if n.t == NodeTypeDynamic {
+	if n.t == nodeTypeDynamic {
 		traversed := false
 		for i := 0; i < len(p); i++ {
 			if next, ok := n.stops[p[i]]; ok {
@@ -154,7 +152,7 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 					traversed = true
 					h := find(next, p[i:], urlParameterBag)
 					if nil != h {
-						urlParameterBag.Add(n.prefix, p[0:i])
+						urlParameterBag.add(n.prefix, p[0:i])
 						return h
 					}
 				}
@@ -167,7 +165,7 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 				validExpression = n.regexp.MatchString(p)
 			}
 			if validExpression {
-				urlParameterBag.Add(n.prefix, p)
+				urlParameterBag.add(n.prefix, p)
 				return n.handler
 			}
 		}
@@ -190,7 +188,7 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 	}
 
 	for next := n.sibling; nil != next; next = next.sibling {
-		if next.t != NodeTypeDynamic {
+		if next.t != nodeTypeDynamic {
 			continue
 		}
 
@@ -200,13 +198,13 @@ func find(n *Node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 	return nil
 }
 
-type Node struct {
+type node struct {
 	prefix  string
 	handler HandlerFunction
-	child   *Node
-	sibling *Node
+	child   *node
+	sibling *node
 	t       int
-	stops   map[byte]*Node
+	stops   map[byte]*node
 	regexp  *regexp.Regexp
 }
 

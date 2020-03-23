@@ -1,4 +1,4 @@
-package http_router
+package routing
 
 import (
 	"bufio"
@@ -7,39 +7,39 @@ import (
 )
 
 const (
-	TSlash = iota
-	TStatic
-	TOpenVar
-	TVar
-	TCloseVar
-	TEnd
-	TExpReg
+	tSlash = iota
+	tStatic
+	tOpenVar
+	tVar
+	tCloseVar
+	tEnd
+	tExpReg
 )
 
 const (
-	TModeStatic = iota
-	TModeIdentifier
+	tModeStatic = iota
+	tModeIdentifier
 )
 
-type Lexer struct {
+type lexer struct {
 	mode int
 	buf  *bufio.Reader
 }
 
-func NewLexer(path string) *Lexer {
+func newLexer(path string) *lexer {
 	reader := strings.NewReader(path)
-	return &Lexer{buf: bufio.NewReader(reader), mode: TModeStatic}
+	return &lexer{buf: bufio.NewReader(reader), mode: tModeStatic}
 }
 
-func (l *Lexer) scan() token {
+func (l *lexer) scan() token {
 	ch, _, err := l.buf.ReadRune()
 
 	if nil != err {
 		return createEndToken()
 	}
 
-	if l.mode == TModeIdentifier {
-		l.mode = TModeStatic
+	if l.mode == tModeIdentifier {
+		l.mode = tModeStatic
 
 		if isIdentifierRune(ch) {
 			_ = l.buf.UnreadRune()
@@ -62,14 +62,14 @@ func (l *Lexer) scan() token {
 	}
 
 	if isOpenBrace(ch) {
-		l.mode = TModeIdentifier
+		l.mode = tModeIdentifier
 		return createOpenVarToken()
 	}
 	_ = l.buf.UnreadRune()
 	return l.scanStatic()
 }
 
-func (l *Lexer) scanStatic() token {
+func (l *lexer) scanStatic() token {
 	var out bytes.Buffer
 
 	for {
@@ -90,7 +90,7 @@ func (l *Lexer) scanStatic() token {
 	return createStaticToken(out.String())
 }
 
-func (l *Lexer) scanIdentifier() token {
+func (l *lexer) scanIdentifier() token {
 	var out bytes.Buffer
 
 	for {
@@ -110,7 +110,7 @@ func (l *Lexer) scanIdentifier() token {
 	return createVarToken(out.String())
 }
 
-func (l *Lexer) scanExpRegular() token {
+func (l *lexer) scanExpRegular() token {
 	var out bytes.Buffer
 
 	braces := 0
@@ -138,13 +138,13 @@ func (l *Lexer) scanExpRegular() token {
 	return createExpRegularToken(out.String())
 }
 
-func (l *Lexer) scanAll() []token {
+func (l *lexer) scanAll() []token {
 
 	tokens := make([]token, 0, 10)
 	for {
 		token := l.scan()
 		tokens = append(tokens, token)
-		if TEnd == token.t {
+		if tEnd == token.t {
 			break
 		}
 	}
@@ -152,31 +152,31 @@ func (l *Lexer) scanAll() []token {
 }
 
 func createSlashToken() token {
-	return token{t: TSlash, v: "/"}
+	return token{t: tSlash, v: "/"}
 }
 
 func createStaticToken(value string) token {
-	return token{t: TStatic, v: value}
+	return token{t: tStatic, v: value}
 }
 
 func createOpenVarToken() token {
-	return token{t: TOpenVar, v: "{"}
+	return token{t: tOpenVar, v: "{"}
 }
 
 func createVarToken(value string) token {
-	return token{t: TVar, v: value}
+	return token{t: tVar, v: value}
 }
 
 func createExpRegularToken(value string) token {
-	return token{t: TExpReg, v: value}
+	return token{t: tExpReg, v: value}
 }
 
 func createCloseVarToken() token {
-	return token{t: TCloseVar, v: "}"}
+	return token{t: tCloseVar, v: "}"}
 }
 
 func createEndToken() token {
-	return token{t: TEnd, v: ""}
+	return token{t: tEnd, v: ""}
 }
 
 func isSlash(ch rune) bool {

@@ -1,4 +1,4 @@
-package http_router
+package routing
 
 import (
 	"net/http"
@@ -167,22 +167,12 @@ var testRoutes = []string{
 	"/progs/update.bash",
 }
 
-func BenchmarkSliceRouter(b *testing.B) {
-	router := SliceRouter{}
+func BenchmarkTreeRouter(b *testing.B) {
+	router := Router{}
 	benchRouter(&router, b)
 }
 
-func BenchmarkMapRouter(b *testing.B) {
-	router := MapRouter{}
-	benchRouter(&router, b)
-}
-
-func BenchmarkPrefixTreeRouter(b *testing.B) {
-	router := PrefixTreeRouter{}
-	benchRouter(&router, b)
-}
-
-func benchRouter(router Router, b *testing.B) {
+func benchRouter(router *Router, b *testing.B) {
 	m := new(runtime.MemStats)
 	runtime.ReadMemStats(m)
 	before := m.HeapAlloc
@@ -211,5 +201,4 @@ func benchRouter(router Router, b *testing.B) {
 		router.ServeHTTP(nil, request2)
 		router.ServeHTTP(nil, request3)
 	}
-
 }
