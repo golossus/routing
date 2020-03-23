@@ -11,21 +11,15 @@ const (
 )
 
 type tree struct {
-	root map[string]*node
+	root *node
 }
 
-func (t *tree) insert(verb string, chunks []chunk, handler HandlerFunction) {
-
+func (t *tree) insert(chunks []chunk, handler HandlerFunction) {
 	subtree, err := createTreeFromChunks(chunks, handler)
 	if err != nil {
 		panic(err)
 	}
-
-	if nil == t.root {
-		t.root = make(map[string]*node)
-	}
-
-	t.root[verb] = combine(t.root[verb], subtree)
+	t.root = combine(t.root, subtree)
 }
 
 func combine(tree1 *node, tree2 *node) *node {
@@ -112,7 +106,7 @@ func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*node, error
 	for i := 1; i < len(chunks); i++ {
 		newNode := createNodeFromChunk(chunks[i])
 		if n.t == nodeTypeDynamic {
-			n.stops[newNode.prefix[0:1]] = newNode
+			n.stops[newNode.prefix[0]] = newNode
 		}
 		n.child = newNode
 		n = n.child
@@ -128,23 +122,17 @@ func createNodeFromChunk(c chunk) *node {
 	if c.t == tChunkStatic {
 		n = &node{prefix: c.v, handler: nil, t: nodeTypeStatic}
 	} else {
-		stops := make(map[string]*node)
+		stops := make(map[byte]*node)
 
 		n = &node{prefix: c.v, t: nodeTypeDynamic, handler: nil, stops: stops, regexp: c.exp}
 	}
 	return n
 }
 
-func (t *tree) find(verb string, path string) (HandlerFunction, UrlParameterBag) {
+func (t *tree) find(path string) (HandlerFunction, UrlParameterBag) {
 	urlParameterBag := newUrlParameterBag(5, true)
 
-	n, ok := t.root[verb]
-	if !ok {
-		return nil, urlParameterBag
-	}
-	p := path
-
-	return find(n, p, &urlParameterBag), urlParameterBag
+	return find(t.root, path, &urlParameterBag), urlParameterBag
 }
 
 func find(n *node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
@@ -154,8 +142,8 @@ func find(n *node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 
 	if n.t == nodeTypeDynamic {
 		traversed := false
-		for i, ch := range p {
-			if next, ok := n.stops[string(ch)]; ok {
+		for i := 0; i < len(p); i++ {
+			if next, ok := n.stops[p[i]]; ok {
 				validExpression := true
 				if n.regexp != nil {
 					validExpression = n.regexp.MatchString(p[0:i])
@@ -216,7 +204,7 @@ type node struct {
 	child   *node
 	sibling *node
 	t       int
-	stops   map[string]*node
+	stops   map[byte]*node
 	regexp  *regexp.Regexp
 }
 
