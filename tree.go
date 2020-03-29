@@ -129,13 +129,13 @@ func createNodeFromChunk(c chunk) *node {
 	return n
 }
 
-func (t *tree) find(path string) (HandlerFunction, UrlParameterBag) {
-	urlParameterBag := newUrlParameterBag(5, true)
+func (t *tree) find(path string) (HandlerFunction, URLParameterBag) {
+	urlParameterBag := newURLParameterBag(5, true)
 
 	return find(t.root, path, &urlParameterBag), urlParameterBag
 }
 
-func find(n *node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
+func find(n *node, p string, urlParameterBag *URLParameterBag) HandlerFunction {
 	if nil == n || len(p) == 0 {
 		return nil
 	}

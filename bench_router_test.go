@@ -178,7 +178,7 @@ func benchRouter(router *Router, b *testing.B) {
 	before := m.HeapAlloc
 	handler := func(response http.ResponseWriter, request *http.Request) {}
 	for _, routes := range testRoutes {
-		router.AddHandler(http.MethodGet, routes, handler)
+		router.addHandler(http.MethodGet, routes, handler)
 	}
 	runtime.ReadMemStats(m)
 	after := m.HeapAlloc

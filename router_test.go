@@ -12,8 +12,8 @@ func TestTreeRouter(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.AddHandler(http.MethodGet, "/path1", nil)
-	router.AddHandler(http.MethodGet, "/path2", f)
+	router.addHandler(http.MethodGet, "/path1", nil)
+	router.addHandler(http.MethodGet, "/path2", f)
 
 	request, _ := http.NewRequest("GET", "/path2", nil)
 	router.ServeHTTP(nil, request)
@@ -27,7 +27,7 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 	router := Router{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {
-		urlParameterBag := GetUrlParameters(request)
+		urlParameterBag := GetURLParameters(request)
 		if 2 != len(urlParameterBag.params) {
 			t.Errorf("")
 		}
@@ -41,7 +41,7 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 			t.Errorf("")
 		}
 	}
-	router.AddHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]{1,5}}", f)
+	router.addHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]{1,5}}", f)
 
 	request, _ := http.NewRequest("GET", "/path1/100/dummy", nil)
 	router.ServeHTTP(nil, request)
@@ -59,7 +59,7 @@ func TestGetURLParamatersFailsIfRegExpFails(t *testing.T) {
 	router := Router{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {}
-	router.AddHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", f)
+	router.addHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", f)
 
 	request, _ := http.NewRequest("GET", "/path1/100/123", nil)
 	router.ServeHTTP(nil, request)
@@ -102,11 +102,11 @@ func TestVariosVerbsMatching(t *testing.T) {
 		flag++
 	}
 
-	router.AddHandler(http.MethodGet, "/path1", f1)
-	router.AddHandler(http.MethodGet, "/path1/{id}", f2)
-	router.AddHandler(http.MethodPost, "/path1", f3)
-	router.AddHandler(http.MethodPut, "/path1/{id}", f4)
-	router.AddHandler(http.MethodDelete, "/path1/{id}", f5)
+	router.addHandler(http.MethodGet, "/path1", f1)
+	router.addHandler(http.MethodGet, "/path1/{id}", f2)
+	router.addHandler(http.MethodPost, "/path1", f3)
+	router.addHandler(http.MethodPut, "/path1/{id}", f4)
+	router.addHandler(http.MethodDelete, "/path1/{id}", f5)
 
 	request, _ := http.NewRequest(http.MethodGet, "/path1", nil)
 	router.ServeHTTP(nil, request)

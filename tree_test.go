@@ -147,7 +147,6 @@ func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 	tree.insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id", nil), generateStaticChunk("/")...)...), h)
 	tree.insert(append(generateStaticChunk("/path1/"), append(generateDynamicChunk("id", nil), generateStaticChunk("-")...)...), h)
 
-
 	if "/path1/" != tree.root.prefix {
 		t.Errorf("")
 	}
@@ -207,7 +206,6 @@ func TestInsertHandlerIsOnlyOnLeaf(t *testing.T) {
 	tree.insert(append(generateStaticChunk("/path1/path2")), h)
 	tree.insert(append(generateStaticChunk("/path1/path2/path3")), h)
 	tree.insert(append(generateStaticChunk("/path1/path2/path4")), h)
-
 
 	if "/path1" != tree.root.prefix {
 		t.Errorf("")
@@ -529,7 +527,7 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	parser = newParser("/path1/{id}/path2")
 	_, _ = parser.parse()
 
-  tree.insert(parser.chunks, handler2)
+	tree.insert(parser.chunks, handler2)
 
 	parser = newParser("/path1/{id}-path2")
 	_, _ = parser.parse()
@@ -542,7 +540,6 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	parser = newParser("/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}")
 	_, _ = parser.parse()
 	tree.insert(parser.chunks, handler5)
-
 
 	parser = newParser("/path3/{slug}")
 	_, _ = parser.parse()
@@ -628,7 +625,7 @@ func TestFindHandlerWithDynamicAndParameters(t *testing.T) {
 			t.Errorf("")
 		}
 
-		for index, _ := range item.keys {
+		for index := range item.keys {
 			if paramBag.params[index].name != item.keys[index] {
 				t.Errorf("")
 			}
