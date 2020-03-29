@@ -8,8 +8,7 @@ go:
   - master
 os:
   - linux
-dist:
-  xenial
+dist: xenial
 jobs:
   allow_failures:
     - go: master
