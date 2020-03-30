@@ -752,7 +752,7 @@ func TestInsertPrioritisesStaticPaths(t *testing.T) {
 	}
 }
 
-func generateHandler(path string) (HandlerFunction, *string) {
+func generateHandler(path string) (http.HandlerFunc, *string) {
 	var flag string
 	return func(response http.ResponseWriter, request *http.Request) {
 		flag = path

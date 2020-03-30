@@ -12,8 +12,8 @@ func TestTreeRouter(t *testing.T) {
 	f := func(response http.ResponseWriter, request *http.Request) {
 		flag = true
 	}
-	router.addHandler(http.MethodGet, "/path1", nil)
-	router.addHandler(http.MethodGet, "/path2", f)
+	router.Register(http.MethodGet, "/path1", nil)
+	router.Register(http.MethodGet, "/path2", f)
 
 	request, _ := http.NewRequest("GET", "/path2", nil)
 	router.ServeHTTP(nil, request)
@@ -41,7 +41,7 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 			t.Errorf("")
 		}
 	}
-	router.addHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]{1,5}}", f)
+	router.Register(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]{1,5}}", f)
 
 	request, _ := http.NewRequest("GET", "/path1/100/dummy", nil)
 	router.ServeHTTP(nil, request)
@@ -59,7 +59,7 @@ func TestGetURLParamatersFailsIfRegExpFails(t *testing.T) {
 	router := Router{}
 
 	f := func(response http.ResponseWriter, request *http.Request) {}
-	router.addHandler(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", f)
+	router.Register(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", f)
 
 	request, _ := http.NewRequest("GET", "/path1/100/123", nil)
 	router.ServeHTTP(nil, request)
@@ -102,11 +102,11 @@ func TestVariosVerbsMatching(t *testing.T) {
 		flag++
 	}
 
-	router.addHandler(http.MethodGet, "/path1", f1)
-	router.addHandler(http.MethodGet, "/path1/{id}", f2)
-	router.addHandler(http.MethodPost, "/path1", f3)
-	router.addHandler(http.MethodPut, "/path1/{id}", f4)
-	router.addHandler(http.MethodDelete, "/path1/{id}", f5)
+	router.Register(http.MethodGet, "/path1", f1)
+	router.Register(http.MethodGet, "/path1/{id}", f2)
+	router.Register(http.MethodPost, "/path1", f3)
+	router.Register(http.MethodPut, "/path1/{id}", f4)
+	router.Register(http.MethodDelete, "/path1/{id}", f5)
 
 	request, _ := http.NewRequest(http.MethodGet, "/path1", nil)
 	router.ServeHTTP(nil, request)
