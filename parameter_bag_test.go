@@ -3,7 +3,7 @@ package routing
 import "testing"
 
 func TestUrlParameterBagEmptyValuesOnCreation(t *testing.T) {
-	bag := UrlParameterBag{}
+	bag := URLParameterBag{}
 
 	if bag.params != nil {
 		t.Errorf("")
@@ -19,7 +19,7 @@ func TestUrlParameterBagEmptyValuesOnCreation(t *testing.T) {
 }
 
 func TestNewUrlParameterBagSetsRightValuesOnCreation(t *testing.T) {
-	bag := newUrlParameterBag(5, true)
+	bag := newURLParameterBag(5, true)
 
 	if bag.params != nil {
 		t.Errorf("")
@@ -35,7 +35,7 @@ func TestNewUrlParameterBagSetsRightValuesOnCreation(t *testing.T) {
 }
 
 func TestUrlParameterBagAddsParameter(t *testing.T) {
-	bag := UrlParameterBag{}
+	bag := URLParameterBag{}
 
 	bag.add("param1", "v1")
 
@@ -53,7 +53,7 @@ func TestUrlParameterBagAddsParameter(t *testing.T) {
 }
 
 func TestUrlParameterBagAddsMultipleParameters(t *testing.T) {
-	bag := UrlParameterBag{}
+	bag := URLParameterBag{}
 
 	bag.add("param1", "v1")
 	bag.add("param2", "v2")
@@ -83,7 +83,7 @@ func TestUrlParameterBagAddsMultipleParameters(t *testing.T) {
 }
 
 func TestUrlParameterBagGetByName(t *testing.T) {
-	bag := UrlParameterBag{}
+	bag := URLParameterBag{}
 
 	bag.add("param1", "v1")
 	bag.add("param2", "v2")
@@ -120,7 +120,7 @@ func TestUrlParameterBagGetByName(t *testing.T) {
 }
 
 func TestUrlParameterBagGetByNameInReverseMode(t *testing.T) {
-	bag := UrlParameterBag{reverse: true}
+	bag := URLParameterBag{reverse: true}
 
 	bag.add("param1", "v1")
 	bag.add("param2", "v2")
@@ -158,7 +158,7 @@ func TestUrlParameterBagGetByNameInReverseMode(t *testing.T) {
 }
 
 func TestUrlParameterBagGetByIndex(t *testing.T) {
-	bag := UrlParameterBag{}
+	bag := URLParameterBag{}
 
 	bag.add("param1", "v1")
 	bag.add("param2", "v2")
@@ -194,7 +194,7 @@ func TestUrlParameterBagGetByIndex(t *testing.T) {
 }
 
 func TestUrlParameterBagGetByIndexInReverseMode(t *testing.T) {
-	bag := UrlParameterBag{reverse: true}
+	bag := URLParameterBag{reverse: true}
 
 	bag.add("param3", "v3")
 	bag.add("param2", "v2")

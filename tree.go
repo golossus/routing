@@ -2,6 +2,7 @@ package routing
 
 import (
 	"fmt"
+	"net/http"
 	"regexp"
 )
 
@@ -14,7 +15,7 @@ type tree struct {
 	root *node
 }
 
-func (t *tree) insert(chunks []chunk, handler HandlerFunction) {
+func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) {
 	subtree, err := createTreeFromChunks(chunks, handler)
 	if err != nil {
 		panic(err)
@@ -94,7 +95,7 @@ func combine(tree1 *node, tree2 *node) *node {
 	return tree1
 }
 
-func createTreeFromChunks(chunks []chunk, handler HandlerFunction) (*node, error) {
+func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) (*node, error) {
 
 	if len(chunks) < 1 {
 		return nil, fmt.Errorf("chunks can not be empty")
@@ -129,13 +130,13 @@ func createNodeFromChunk(c chunk) *node {
 	return n
 }
 
-func (t *tree) find(path string) (HandlerFunction, UrlParameterBag) {
-	urlParameterBag := newUrlParameterBag(5, true)
+func (t *tree) find(path string) (http.HandlerFunc, URLParameterBag) {
+	urlParameterBag := newURLParameterBag(5, true)
 
 	return find(t.root, path, &urlParameterBag), urlParameterBag
 }
 
-func find(n *node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
+func find(n *node, p string, urlParameterBag *URLParameterBag) http.HandlerFunc {
 	if nil == n || len(p) == 0 {
 		return nil
 	}
@@ -200,7 +201,7 @@ func find(n *node, p string, urlParameterBag *UrlParameterBag) HandlerFunction {
 
 type node struct {
 	prefix  string
-	handler HandlerFunction
+	handler http.HandlerFunc
 	child   *node
 	sibling *node
 	t       int

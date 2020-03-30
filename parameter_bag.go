@@ -9,13 +9,14 @@ type urlParameter struct {
 	value string
 }
 
-type UrlParameterBag struct {
+// URLParameterBag is a structure where the URL parameters are saved
+type URLParameterBag struct {
 	params   []urlParameter
 	capacity uint
 	reverse  bool
 }
 
-func (u *UrlParameterBag) add(name, value string) {
+func (u *URLParameterBag) add(name, value string) {
 	if u.params == nil {
 		u.params = make([]urlParameter, 0, u.capacity)
 	}
@@ -23,7 +24,8 @@ func (u *UrlParameterBag) add(name, value string) {
 	u.params = append(u.params, urlParameter{name, value})
 }
 
-func (u *UrlParameterBag) GetByName(name string) (string, error) {
+// GetByName is a method to retrieve a dynamic parameter of the URL using a name. For example 'userId' in /users/{userId}
+func (u *URLParameterBag) GetByName(name string) (string, error) {
 	for i := range u.params {
 		if u.reverse {
 			i = len(u.params) - 1 - i
@@ -36,7 +38,8 @@ func (u *UrlParameterBag) GetByName(name string) (string, error) {
 	return "", fmt.Errorf("url parameter with name %s does not exist", name)
 }
 
-func (u *UrlParameterBag) GetByIndex(index uint) (string, error) {
+// GetByIndex is a method to retrieve a dynamic parameter of the URL using a index. For example 1 to obtain the 'userId' in /users/{userId}/file/{fileId}
+func (u *URLParameterBag) GetByIndex(index uint) (string, error) {
 	i := int(index)
 	if len(u.params) <= i {
 		return "", fmt.Errorf("url parameter at index %d does not exist", i)
@@ -49,8 +52,8 @@ func (u *UrlParameterBag) GetByIndex(index uint) (string, error) {
 	return u.params[i].value, nil
 }
 
-func newUrlParameterBag(capacity uint, reverse bool) UrlParameterBag {
-	return UrlParameterBag{
+func newURLParameterBag(capacity uint, reverse bool) URLParameterBag {
+	return URLParameterBag{
 		capacity: capacity,
 		reverse:  reverse,
 	}

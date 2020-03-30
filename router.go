@@ -9,24 +9,30 @@ type paramsKey int
 
 var ctxKey paramsKey
 
-func GetUrlParameters(request *http.Request) UrlParameterBag {
-	return request.Context().Value(ctxKey).(UrlParameterBag)
+// GetURLParameters is in charge of retrieve dynamic parameter of the URL within your route. For example, User's ID in /users/{userId}
+func GetURLParameters(request *http.Request) URLParameterBag {
+	return request.Context().Value(ctxKey).(URLParameterBag)
 }
 
-type HandlerFunction func(http.ResponseWriter, *http.Request)
-
+// Router is a structure where all routes are stored
 type Router struct {
 	trees map[string]*tree
 }
 
+// NewRouter returns an empty Router
+func NewRouter() Router {
+	return Router{}
+}
+
+// ServerHTTP executes the HandlerFunc if the request path is found
 func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-  tree, ok := r.trees[request.Method]
+	tree, ok := r.trees[request.Method]
 	if !ok {
 		http.NotFound(response, request)
 		return
 	}
-  
-  handler, params := tree.find(request.URL.Path)
+
+	handler, params := tree.find(request.URL.Path)
 	if handler == nil {
 		http.NotFound(response, request)
 		return
@@ -36,43 +42,53 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	handler(response, request.WithContext(context.WithValue(ctx, ctxKey, params)))
 }
 
-func (r *Router) Head(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodHead, path, handler)
+// Head is a method to register a new HEAD route in the router.
+func (r *Router) Head(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodHead, path, handler)
 }
 
-func (r *Router) Get(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodGet, path, handler)
+// Get is a method to register a new GET route in the router.
+func (r *Router) Get(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodGet, path, handler)
 }
 
-func (r *Router) Post(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodPost, path, handler)
+// Post is a method to register a new POST route in the router.
+func (r *Router) Post(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodPost, path, handler)
 }
 
-func (r *Router) Put(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodPut, path, handler)
+// Put is a method to register a new PUT route in the router.
+func (r *Router) Put(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodPut, path, handler)
 }
 
-func (r *Router) Patch(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodPatch, path, handler)
+// Patch is a method to register a new PATCH route in the router.
+func (r *Router) Patch(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodPatch, path, handler)
 }
 
-func (r *Router) Delete(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodDelete, path, handler)
+// Delete is a method to register a new DELETE route in the router.
+func (r *Router) Delete(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodDelete, path, handler)
 }
 
-func (r *Router) Connect(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodConnect, path, handler)
+// Connect is a method to register a new CONNECT route in the router.
+func (r *Router) Connect(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodConnect, path, handler)
 }
 
-func (r *Router) Options(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodOptions, path, handler)
+// Options is a method to register a new OPTIONS route in the router.
+func (r *Router) Options(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodOptions, path, handler)
 }
 
-func (r *Router) Trace(path string, handler HandlerFunction) {
-	r.AddHandler(http.MethodTrace, path, handler)
+// Trace is a method to register a new TRACE route in the router.
+func (r *Router) Trace(path string, handler http.HandlerFunc) {
+	r.Register(http.MethodTrace, path, handler)
 }
 
-func (r *Router) Any(path string, handler HandlerFunction) {
+// Any is a method to register a new route with all the verbs.
+func (r *Router) Any(path string, handler http.HandlerFunc) {
 	kvs := [9]string{
 		http.MethodHead,
 		http.MethodGet,
@@ -85,11 +101,12 @@ func (r *Router) Any(path string, handler HandlerFunction) {
 		http.MethodTrace,
 	}
 	for _, verb := range kvs {
-		r.AddHandler(verb, path, handler)
+		r.Register(verb, path, handler)
 	}
 }
 
-func (r *Router) AddHandler(verb, path string, handler HandlerFunction) {
+// Register adds a new route in the router
+func (r *Router) Register(verb, path string, handler http.HandlerFunc) {
 	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
