@@ -1,6 +1,11 @@
-<p align="center"><a href="https://www.golossus.com" target="_blank">
-    <img height="100" src="https://avatars2.githubusercontent.com/u/58183018">
-</a></p>
+[![Go Report Card](https://goreportcard.com/badge/github.com/golossus/routing)](https://goreportcard.com/report/github.com/golossus/routing) 
+[![Build Status](https://travis-ci.com/golossus/routing.svg?branch=master)](https://travis-ci.com/golossus/routing)
+
+<p align="center">
+    <a href="https://www.golossus.com" target="_blank">
+        <img height="100" src="https://avatars2.githubusercontent.com/u/58183018">
+    </a>
+</p>
 
 [Golossus][1] is a set of reusable **Go modules** to facilitate the creation of 
 web applications leveraging Go's standard packages, mainly **net/http**.
