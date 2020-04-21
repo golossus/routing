@@ -23,6 +23,64 @@ func TestTreeRouter(t *testing.T) {
 	}
 }
 
+func TestTreeRouterRegistrationOrder(t *testing.T) {
+	router := Router{}
+
+	flag := false
+	flag2 := false
+	f := func(response http.ResponseWriter, request *http.Request) {
+		flag = true
+	}
+	f2 := func(response http.ResponseWriter, request *http.Request) {
+		flag2 = true
+	}
+	router.Register(http.MethodGet, "/1/classes/{className}/{objectId}", f)
+	router.Register(http.MethodGet, "/1/classes/{className}", f2)
+
+	request, _ := http.NewRequest("GET", "/1/classes/:className/:objectId", nil)
+	router.ServeHTTP(nil, request)
+
+	if !flag {
+		t.Errorf("Handler not match ")
+	}
+	
+	request, _ = http.NewRequest("GET", "/1/classes/:className", nil)
+	router.ServeHTTP(nil, request)
+
+	if !flag2 {
+		t.Errorf("Handler2 not match ")
+	}
+}
+
+func TestTreeRouterMethod(t *testing.T) {
+	router := Router{}
+
+	flag := false
+	flag2 := false
+	f := func(response http.ResponseWriter, request *http.Request) {
+		flag = true
+	}
+	f2 := func(response http.ResponseWriter, request *http.Request) {
+		flag2 = true
+	}
+	router.Register(http.MethodGet, "/1/classes/{className}", f)
+	router.Register(http.MethodPost, "/1/classes/{className}", f2)
+
+	request, _ := http.NewRequest("GET", "/1/classes/:className", nil)
+	router.ServeHTTP(nil, request)
+
+	if !flag {
+		t.Errorf("Handler not match ")
+	}
+
+	request, _ = http.NewRequest("POST", "/1/classes/:className", nil)
+	router.ServeHTTP(nil, request)
+
+	if !flag2 {
+		t.Errorf("Handler2 not match ")
+	}
+}
+
 func TestGetURLParamatersBagInHandler(t *testing.T) {
 	router := Router{}
 

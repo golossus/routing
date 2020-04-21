@@ -38,6 +38,9 @@ func combine(tree1 *node, tree2 *node) *node {
 				tree2.stops[k] = v
 			}
 			tree1.stops = tree2.stops
+			if tree2.handler != nil{
+				tree1.handler = tree2.handler
+			}
 			tree1.child = combine(tree1.child, tree2.child)
 			return tree1
 		}
@@ -88,6 +91,10 @@ func combine(tree1 *node, tree2 *node) *node {
 
 		split.child = combine(tree1, tree2)
 		return split
+	}
+
+	if tree2.handler != nil {
+		tree1.handler = tree2.handler
 	}
 
 	tree1.child = combine(tree1.child, tree2.child)
