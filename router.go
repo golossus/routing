@@ -43,52 +43,52 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 }
 
 // Head is a method to register a new HEAD route in the router.
-func (r *Router) Head(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodHead, path, handler)
+func (r *Router) Head(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodHead, path, handler)
 }
 
 // Get is a method to register a new GET route in the router.
-func (r *Router) Get(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodGet, path, handler)
+func (r *Router) Get(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodGet, path, handler)
 }
 
 // Post is a method to register a new POST route in the router.
-func (r *Router) Post(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodPost, path, handler)
+func (r *Router) Post(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodPost, path, handler)
 }
 
 // Put is a method to register a new PUT route in the router.
-func (r *Router) Put(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodPut, path, handler)
+func (r *Router) Put(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodPut, path, handler)
 }
 
 // Patch is a method to register a new PATCH route in the router.
-func (r *Router) Patch(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodPatch, path, handler)
+func (r *Router) Patch(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodPatch, path, handler)
 }
 
 // Delete is a method to register a new DELETE route in the router.
-func (r *Router) Delete(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodDelete, path, handler)
+func (r *Router) Delete(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodDelete, path, handler)
 }
 
 // Connect is a method to register a new CONNECT route in the router.
-func (r *Router) Connect(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodConnect, path, handler)
+func (r *Router) Connect(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodConnect, path, handler)
 }
 
 // Options is a method to register a new OPTIONS route in the router.
-func (r *Router) Options(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodOptions, path, handler)
+func (r *Router) Options(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodOptions, path, handler)
 }
 
 // Trace is a method to register a new TRACE route in the router.
-func (r *Router) Trace(path string, handler http.HandlerFunc) {
-	r.Register(http.MethodTrace, path, handler)
+func (r *Router) Trace(path string, handler http.HandlerFunc) error {
+	return r.Register(http.MethodTrace, path, handler)
 }
 
 // Any is a method to register a new route with all the verbs.
-func (r *Router) Any(path string, handler http.HandlerFunc) {
+func (r *Router) Any(path string, handler http.HandlerFunc) error {
 	kvs := [9]string{
 		http.MethodHead,
 		http.MethodGet,
@@ -101,16 +101,20 @@ func (r *Router) Any(path string, handler http.HandlerFunc) {
 		http.MethodTrace,
 	}
 	for _, verb := range kvs {
-		r.Register(verb, path, handler)
+		if err := r.Register(verb, path, handler); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // Register adds a new route in the router
-func (r *Router) Register(verb, path string, handler http.HandlerFunc) {
+func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
 	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if nil == r.trees {
@@ -122,4 +126,6 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc) {
 	}
 
 	r.trees[verb].insert(parser.chunks, handler)
+
+	return nil
 }

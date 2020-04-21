@@ -647,11 +647,7 @@ func TestCreateTreeFromChunksWorks(t *testing.T) {
 
 	handler := func(http.ResponseWriter, *http.Request) {}
 
-	tree, err := createTreeFromChunks(chunks, handler)
-
-	if err != nil {
-		t.Errorf("Unable to create tree for chunks %v", chunks)
-	}
+	tree := createTreeFromChunks(chunks, handler)
 
 	if tree.prefix != "/" || tree.handler != nil || tree.t != nodeTypeStatic || tree.child == nil {
 		t.Errorf("Invalid root node %v", tree)

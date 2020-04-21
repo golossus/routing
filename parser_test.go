@@ -78,20 +78,18 @@ func TestParserDoesNotValidateInvalidPaths(t *testing.T) {
 	}
 }
 
-func TestParserThrowsPanicWhenExpressionIsInvalid(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		}
-	}()
-
+func TestParserReturnsErrorWhenExpressionIsInvalid(t *testing.T) {
 	paths := []string{
 		"/path1/{id:[0-9+}/",
 	}
 
 	for _, path := range paths {
 		parser := newParser(path)
-		_, _ = parser.parse()
+		_, err := parser.parse()
+
+		if  err == nil {
+			t.Errorf("The code did not return an error")
+		}
 	}
 }
 
