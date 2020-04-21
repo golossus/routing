@@ -2,7 +2,6 @@ package routing
 
 import (
 	"net/http"
-	"regexp"
 )
 
 const (
@@ -30,6 +29,11 @@ func combine(tree1 *node, tree2 *node) *node {
 
 	if tree1.t == nodeTypeDynamic {
 		if tree2.t == nodeTypeDynamic && tree2.prefix == tree1.prefix {
+			if !tree1.regexpEquals(tree2) {
+				tree1.sibling = combine(tree1.sibling, tree2)
+				return tree1
+			}
+
 			for k, v := range tree1.stops {
 				tree2.stops[k] = v
 			}
@@ -139,6 +143,7 @@ func find(n *node, p string, urlParameterBag *URLParameterBag) http.HandlerFunc 
 	if n.t == nodeTypeDynamic {
 		traversed := false
 		for i := 0; i < len(p); i++ {
+
 			if next, ok := n.stops[p[i]]; ok {
 				validExpression := true
 				if n.regexp != nil {
@@ -152,6 +157,10 @@ func find(n *node, p string, urlParameterBag *URLParameterBag) http.HandlerFunc 
 						return h
 					}
 				}
+			}
+
+			if p[i] == '/' && !n.isCatchAll() {
+				return find(n.sibling, p, urlParameterBag)
 			}
 		}
 
@@ -192,16 +201,6 @@ func find(n *node, p string, urlParameterBag *URLParameterBag) http.HandlerFunc 
 	}
 
 	return nil
-}
-
-type node struct {
-	prefix  string
-	handler http.HandlerFunc
-	child   *node
-	sibling *node
-	t       int
-	stops   map[byte]*node
-	regexp  *regexp.Regexp
 }
 
 func common(s1, s2 string) int {

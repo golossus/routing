@@ -513,9 +513,10 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	handler1, flag1 := generateHandler("/path1/{id}")
 	handler2, flag2 := generateHandler("/path1/{id}/path2")
 	handler3, flag3 := generateHandler("/path1/{id}-path2")
-	handler4, flag4 := generateHandler("/path1/{name}")
+	handler4, flag4 := generateHandler("/path1/{name}/")
 	handler5, flag5 := generateHandler("/{date}")
-	handler6, flag6 := generateHandler("/path3/{slug}")
+	handler6A, flag6A := generateHandler("/path3/{slug:[0-9]+}")
+	handler6B, flag6B := generateHandler("/path3/{slug:.*}")
 	handler7, flag7 := generateHandler("/path4/{id:[0-9]+}")
 	handler8, flag8 := generateHandler("/path4/{id:[0-9]+}/{slug:[a-z]+}")
 
@@ -533,7 +534,7 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	_, _ = parser.parse()
 	tree.insert(parser.chunks, handler3)
 
-	parser = newParser("/path1/{name}")
+	parser = newParser("/path1/{name}/")
 	_, _ = parser.parse()
 	tree.insert(parser.chunks, handler4)
 
@@ -541,9 +542,13 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	_, _ = parser.parse()
 	tree.insert(parser.chunks, handler5)
 
-	parser = newParser("/path3/{slug}")
+	parser = newParser("/path3/{slug:[0-9]+}")
 	_, _ = parser.parse()
-	tree.insert(parser.chunks, handler6)
+	tree.insert(parser.chunks, handler6A)
+
+	parser = newParser("/path3/{slug:.*}")
+	_, _ = parser.parse()
+	tree.insert(parser.chunks, handler6B)
 
 	parser = newParser("/path4/{id:[0-9]+}")
 	_, _ = parser.parse()
@@ -556,14 +561,14 @@ func TestFindHandlerWithDynamic(t *testing.T) {
 	data := []findResult{
 		{path: "/path4/1s2a3", ok: false, f: nil},
 		{path: "/path1/123", ok: true, f: flag1, schema: "/path1/{id}"},
-		{path: "/path1/123/", ok: true, f: flag4, schema: "/path1/{name}"},
+		{path: "/path1/123/", ok: true, f: flag4, schema: "/path1/{name}/"},
 		{path: "/path1/123/path2", ok: true, f: flag2, schema: "/path1/{id}/path2"},
 		{path: "/path1/123-path2", ok: true, f: flag3, schema: "/path1/{id}-path2"},
 		{path: "/path1/pepe", ok: true, f: flag1, schema: "/path1/{id}"},
 		{path: "/path1/pepe_path2", ok: true, f: flag1, schema: "/path1/{id}"}, //two siblings dynamic not allowed
 		{path: "/2019-20-11", ok: true, f: flag5, schema: "/{date}"},
-		{path: "/path3/123", ok: true, f: flag6, schema: "/path3/{slug}"},
-		{path: "/path3/123/asdf", ok: true, f: flag6, schema: "/path3/{slug}"},
+		{path: "/path3/123", ok: true, f: flag6A, schema: "/path3/{slug:[0-9]+}"},
+		{path: "/path3/123/asdf", ok: true, f: flag6B, schema: "/path3/{slug:.*}"},
 		{path: "/", ok: false, f: nil},
 
 		{path: "/path4/123", ok: true, f: flag7, schema: "/path4/{id:[0-9]+}"},
