@@ -1,3 +1,3 @@
-module github.com/golossus/http-router
+module github.com/golossus/routing
 
 go 1.13
