@@ -294,47 +294,47 @@ func TestInsertHandlerNotRemovePreviousHandler(t *testing.T) {
 		t.Errorf("")
 	}
 
-	if "/path" != tree.root.child.child.prefix {
+	if "/path" != tree.root.child.stops['/'].prefix {
 		t.Errorf("")
 	}
 
-	if nodeTypeStatic != tree.root.child.child.t {
+	if nodeTypeStatic != tree.root.child.stops['/'].t {
 		t.Errorf("")
 	}
-	if nil != tree.root.child.child.handler {
-		t.Errorf("")
-	}
-
-	if "2" != tree.root.child.child.child.prefix {
+	if nil != tree.root.child.stops['/'].handler {
 		t.Errorf("")
 	}
 
-	if nodeTypeStatic != tree.root.child.child.child.t {
-		t.Errorf("")
-	}
-	if nil == tree.root.child.child.child.handler {
+	if "2" != tree.root.child.stops['/'].child.prefix {
 		t.Errorf("")
 	}
 
-	if "3" != tree.root.child.child.child.sibling.prefix {
+	if nodeTypeStatic != tree.root.child.stops['/'].child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.stops['/'].child.handler {
 		t.Errorf("")
 	}
 
-	if nodeTypeStatic != tree.root.child.child.child.sibling.t {
-		t.Errorf("")
-	}
-	if nil == tree.root.child.child.child.sibling.handler {
+	if "3" != tree.root.child.stops['/'].child.sibling.prefix {
 		t.Errorf("")
 	}
 
-	if "/path4" != tree.root.child.child.child.child.prefix {
+	if nodeTypeStatic != tree.root.child.stops['/'].child.sibling.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.stops['/'].child.sibling.handler {
 		t.Errorf("")
 	}
 
-	if nodeTypeStatic != tree.root.child.child.child.child.t {
+	if "/path4" != tree.root.child.stops['/'].child.child.prefix {
 		t.Errorf("")
 	}
-	if nil == tree.root.child.child.child.child.handler {
+
+	if nodeTypeStatic != tree.root.child.stops['/'].child.child.t {
+		t.Errorf("")
+	}
+	if nil == tree.root.child.stops['/'].child.child.handler {
 		t.Errorf("")
 	}
 }

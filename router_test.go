@@ -2,6 +2,7 @@ package routing
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -43,7 +44,7 @@ func TestTreeRouterRegistrationOrder(t *testing.T) {
 	if !flag {
 		t.Errorf("Handler not match ")
 	}
-	
+
 	request, _ = http.NewRequest("GET", "/1/classes/:className", nil)
 	router.ServeHTTP(nil, request)
 
@@ -75,6 +76,37 @@ func TestTreeRouterMethod(t *testing.T) {
 
 	request, _ = http.NewRequest("POST", "/1/classes/:className", nil)
 	router.ServeHTTP(nil, request)
+
+	if !flag2 {
+		t.Errorf("Handler2 not match ")
+	}
+}
+
+func TestTreeRouterDynamicStops(t *testing.T) {
+	router := Router{}
+
+	flag := false
+	flag2 := false
+	f := func(response http.ResponseWriter, request *http.Request) {
+		flag = true
+	}
+	f2 := func(response http.ResponseWriter, request *http.Request) {
+		flag2 = true
+	}
+	router.Register(http.MethodGet, "/activities/{activityId}/people/{collection}", f)
+	router.Register(http.MethodGet, "/activities/{activityId}/comments", f2)
+
+	request, _ := http.NewRequest("GET", "/activities/:activityId/people/:collection", nil)
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if !flag {
+		t.Errorf("Handler not match ")
+	}
+
+	request, _ = http.NewRequest("GET", "/activities/:activityId/comments", nil)
+	response = httptest.NewRecorder()
+	router.ServeHTTP(response, request)
 
 	if !flag2 {
 		t.Errorf("Handler2 not match ")

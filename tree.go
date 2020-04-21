@@ -34,14 +34,19 @@ func combine(tree1 *node, tree2 *node) *node {
 				return tree1
 			}
 
-			for k, v := range tree1.stops {
-				tree2.stops[k] = v
+			for k, next1 := range tree1.stops {
+				if next2, ok := tree2.stops[k]; !ok {
+					tree2.stops[k] = next1
+				} else {
+					tree2.stops[k] = combine(next1, next2)
+				}
 			}
+
 			tree1.stops = tree2.stops
 			if tree2.handler != nil{
 				tree1.handler = tree2.handler
 			}
-			tree1.child = combine(tree1.child, tree2.child)
+			tree1.child = nil
 			return tree1
 		}
 
