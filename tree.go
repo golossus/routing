@@ -1,7 +1,6 @@
 package routing
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 )
@@ -16,11 +15,7 @@ type tree struct {
 }
 
 func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) {
-	subtree, err := createTreeFromChunks(chunks, handler)
-	if err != nil {
-		panic(err)
-	}
-	t.root = combine(t.root, subtree)
+	t.root = combine(t.root, createTreeFromChunks(chunks, handler))
 }
 
 func combine(tree1 *node, tree2 *node) *node {
@@ -95,10 +90,10 @@ func combine(tree1 *node, tree2 *node) *node {
 	return tree1
 }
 
-func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) (*node, error) {
+func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) *node {
 
 	if len(chunks) < 1 {
-		return nil, fmt.Errorf("chunks can not be empty")
+		return nil
 	}
 
 	var root = createNodeFromChunk(chunks[0])
@@ -115,7 +110,7 @@ func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) (*node, erro
 
 	n.handler = handler
 
-	return root, nil
+	return root
 }
 
 func createNodeFromChunk(c chunk) *node {

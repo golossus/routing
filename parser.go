@@ -61,8 +61,12 @@ func (p *parser) parseVar() (bool, error) {
 
 	var regExp *regexp.Regexp
 	if isRegExpressionToken(token) {
-		regExp = regexp.MustCompile(fmt.Sprintf("^%s$", token.v))
+		rex, err := regexp.Compile(fmt.Sprintf("^%s$", token.v))
+		if err != nil {
+			return false, err
+		}
 
+		regExp = rex
 		token = p.lexer.scan()
 	}
 
