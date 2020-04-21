@@ -1,4 +1,3 @@
-sudo: false
 language: go
 go:
   - 1.10.x
@@ -7,7 +6,10 @@ go:
   - 1.13.x
   - 1.14.x
   - master
-matrix:
+os:
+  - linux
+dist: xenial
+jobs:
   allow_failures:
     - go: master
   fast_finish: true
