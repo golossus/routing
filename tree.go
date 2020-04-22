@@ -81,6 +81,8 @@ func combine(tree1 *node, tree2 *node) *node {
 
 	if pos != len(tree1.prefix) && pos == len(tree2.prefix) {
 		tree1.prefix = tree1.prefix[pos:]
+		tree2.sibling = tree1.sibling
+		tree1.sibling = nil
 		tree2.child = combine(tree1, tree2.child)
 		return tree2
 	}

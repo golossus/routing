@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -110,6 +111,26 @@ func TestTreeRouterDynamicStops(t *testing.T) {
 
 	if !flag2 {
 		t.Errorf("Handler2 not match ")
+	}
+}
+
+func TestTreeRouterRegistrationDifferentOrdersDynamicAndStaticRoutes(t *testing.T) {
+	router := Router{}
+
+	f := func(response http.ResponseWriter, request *http.Request) {
+		fmt.Fprint(response, request.URL.Path)
+	}
+
+	router.Register(http.MethodGet, "/users/{user}/starred", nil)
+	router.Register(http.MethodGet, "/user/starred", f)
+	router.Register(http.MethodGet, "/users", nil)
+
+	request, _ := http.NewRequest("GET", "/user/starred", nil)
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Result().StatusCode != 200 ||  response.Body.String() != "/user/starred" {
+		t.Errorf("/user/starred not found")
 	}
 }
 
