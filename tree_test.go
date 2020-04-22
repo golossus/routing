@@ -659,14 +659,14 @@ func TestCreateTreeFromChunksWorks(t *testing.T) {
 	}
 
 	tree = tree.child
-	if tree.prefix != "id" || tree.handler != nil || tree.t != nodeTypeDynamic || tree.child == nil {
+	if tree.prefix != "id" || tree.handler != nil || tree.t != nodeTypeDynamic || tree.stops['/'] == nil {
 		t.Errorf("Invalid root node %v", tree)
 	}
 	if _, ok := tree.stops['/']; !ok {
 		t.Errorf("Invalid stops %v for node %v", tree.stops, tree)
 	}
 
-	tree = tree.child
+	tree = tree.stops['/']
 	if tree.prefix != "/abc" || tree.handler == nil || tree.t != nodeTypeStatic || tree.child != nil {
 		t.Errorf("Invalid leaf node %v", tree)
 	}

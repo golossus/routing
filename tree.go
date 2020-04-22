@@ -43,10 +43,10 @@ func combine(tree1 *node, tree2 *node) *node {
 			}
 
 			tree1.stops = tree2.stops
-			if tree2.handler != nil{
+			if tree2.handler != nil {
 				tree1.handler = tree2.handler
 			}
-			tree1.child = nil
+
 			return tree1
 		}
 
@@ -121,9 +121,11 @@ func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) *node {
 		newNode := createNodeFromChunk(chunks[i])
 		if n.t == nodeTypeDynamic {
 			n.stops[newNode.prefix[0]] = newNode
+		} else {
+			n.child = newNode
 		}
-		n.child = newNode
-		n = n.child
+
+		n = newNode
 	}
 
 	n.handler = handler
