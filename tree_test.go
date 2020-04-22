@@ -21,26 +21,26 @@ func parseAndInsertSchema(tree *tree, schema, prefixHandler string) {
 
 func assertNodeValid(t *testing.T, node *node, nodeType int, prefix string, hasHandler bool) {
 	if nodeType != node.t {
-		t.Errorf("Node prefix %s is not static", prefix)
+		t.Errorf("node prefix %s is not static", prefix)
 	}
 
 	if prefix != node.prefix {
-		t.Errorf("Node prefix %s not equals to prefix %s ", node.prefix, prefix)
+		t.Errorf("node prefix %s not equals to prefix %s ", node.prefix, prefix)
 	}
 
 	if hasHandler == true && node.handler == nil {
-		t.Errorf("Node prefix %s don't have handler", node.prefix)
+		t.Errorf("node prefix %s don't have handler", node.prefix)
 	}
 
 	if hasHandler == false && node.handler != nil {
-		t.Errorf("Node prefix %s has handler", node.prefix)
+		t.Errorf("node prefix %s has handler", node.prefix)
 	}
 
 	if node.handler != nil {
 		w := httptest.NewRecorder()
 		node.handler(w, nil)
 		if w.Body.String() != prefix {
-			t.Errorf("Invalid handler in node prefix %s", node.prefix)
+			t.Errorf("invalid handler in node prefix %s", node.prefix)
 		}
 	}
 }
@@ -53,14 +53,14 @@ func assertNodeDynamic(t *testing.T, node *node, prefix string, pattern string, 
 	assertNodeValid(t, node, nodeTypeDynamic, prefix, hasHandler)
 
 	if pattern != node.regexpToString() {
-		t.Errorf("Node regExp %s not equals to regExp %s ", node.regexpToString(), pattern)
+		t.Errorf("node regExp %s not equals to regExp %s ", node.regexpToString(), pattern)
 	}
 
 	if node.handler != nil {
 		w := httptest.NewRecorder()
 		node.handler(w, nil)
 		if w.Body.String() != prefix {
-			t.Errorf("Invalid handler in node prefix %s", node.prefix)
+			t.Errorf("invalid handler in node prefix %s", node.prefix)
 		}
 	}
 }

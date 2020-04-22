@@ -38,14 +38,14 @@ func assertRequestHasParameterHandler(t *testing.T, bag URLParameterBag) http.Ha
 		par := GetURLParameters(r)
 
 		if len(bag.params) != len(par.params) {
-			t.Errorf("Size of parameter bag doesn't match %d != %d", len(bag.params), len(par.params))
+			t.Errorf("size of parameter bag doesn't match %d != %d", len(bag.params), len(par.params))
 		}
 
 		for i := 0; i < len(bag.params); i++ {
 			bagValue, _ := bag.GetByIndex(uint(i))
 			parValue, _ := par.GetByIndex(uint(i))
 			if bagValue != parValue {
-				t.Errorf("Parameter at index %d don't match", i)
+				t.Errorf("parameter at index %d don't match", i)
 			}
 		}
 
@@ -81,7 +81,6 @@ func TestTreeRouterFindsPaths(t *testing.T) {
 	_ = router.Register(http.MethodGet, "/path3/{slug:.*}", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/path4/{id:[0-9]+}", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/path4/{id:[0-9]+}/{slug:[a-z]+}", testHandlerFunc)
-
 
 	assertPathFound(t, router, "GET", "/path1")
 	assertPathFound(t, router, "GET", "/path2")

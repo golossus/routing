@@ -33,7 +33,7 @@ func TestParserValidatesValidPaths(t *testing.T) {
 		parser := newParser(path)
 		valid, err := parser.parse()
 		if !valid {
-			t.Errorf("%v in path %v", err, path)
+			t.Errorf("parser error %v in path %v", err, path)
 		}
 	}
 }
@@ -73,7 +73,7 @@ func TestParserDoesNotValidateInvalidPaths(t *testing.T) {
 		parser := newParser(path)
 		valid, _ := parser.parse()
 		if valid {
-			t.Errorf("Validated invalid path %v", path)
+			t.Errorf("invalid path %v is validated", path)
 		}
 	}
 }
@@ -88,7 +88,7 @@ func TestParserReturnsErrorWhenExpressionIsInvalid(t *testing.T) {
 		_, err := parser.parse()
 
 		if  err == nil {
-			t.Errorf("The code did not return an error")
+			t.Errorf("the code did not return an error")
 		}
 	}
 }
@@ -153,7 +153,7 @@ func TestParserChechChunks(t *testing.T) {
 			chunks = append(chunks, "{"+strconv.Itoa(chunk.t)+" "+chunk.v+" "+expString+"}")
 		}
 		if expectedChunks[index] != fmt.Sprintf("%v", chunks) {
-			t.Errorf("parser error, Invalid chunk %v for path %v", chunks, path)
+			t.Errorf("parser error invalid chunk %v for path %v", chunks, path)
 		}
 	}
 }

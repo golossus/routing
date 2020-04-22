@@ -2,36 +2,70 @@ package routing
 
 import "testing"
 
+func assertBagSetting(t *testing.T, bag URLParameterBag, cap uint, reverse bool) {
+	if bag.params != nil {
+		t.Errorf("parameter bag params is not nil")
+	}
+
+	if bag.capacity != cap {
+		t.Errorf("parameter bag capacity %d not equals to %d", bag.capacity, cap)
+	}
+
+	if bag.reverse != reverse {
+		t.Errorf("parameter bag reverse mode %t not equals to %t", bag.reverse, reverse)
+	}
+}
+
+func assertBagParameterContains(t *testing.T, bag URLParameterBag, name string, value string) {
+	v, err := bag.GetByName(name)
+
+	if err != nil {
+		t.Errorf("parameter %s not found", name)
+	}
+
+	if v != value {
+		t.Errorf("parameter %s with value %s not equals to %s", name, v, value)
+	}
+}
+
+func assertBagParameterAtIndex(t *testing.T, bag URLParameterBag, index uint, value string) {
+	v, err := bag.GetByIndex(index)
+
+	if err != nil {
+		t.Errorf("parameter at index %d not found", index)
+	}
+
+	if v != value {
+		t.Errorf("parameter at index %d with value %s not equals to %s", index, v, value)
+	}
+}
+
+func assertBagParameterNotContains(t *testing.T, bag URLParameterBag, name string) {
+	_, err := bag.GetByName(name)
+
+	if err == nil {
+		t.Errorf("parameter %s found", name)
+	}
+}
+
+func assertBagParameterNotAtIndex(t *testing.T, bag URLParameterBag, index uint) {
+	_, err := bag.GetByIndex(index)
+
+	if err == nil {
+		t.Errorf("parameter at index %d found", index)
+	}
+}
+
 func TestUrlParameterBagEmptyValuesOnCreation(t *testing.T) {
 	bag := URLParameterBag{}
 
-	if bag.params != nil {
-		t.Errorf("")
-	}
-
-	if bag.capacity != 0 {
-		t.Errorf("")
-	}
-
-	if bag.reverse != false {
-		t.Errorf("")
-	}
+	assertBagSetting(t, bag, 0, false)
 }
 
 func TestNewUrlParameterBagSetsRightValuesOnCreation(t *testing.T) {
 	bag := newURLParameterBag(5, true)
 
-	if bag.params != nil {
-		t.Errorf("")
-	}
-
-	if bag.capacity != 5 {
-		t.Errorf("")
-	}
-
-	if bag.reverse != true {
-		t.Errorf("")
-	}
+	assertBagSetting(t, bag, 5, true)
 }
 
 func TestUrlParameterBagAddsParameter(t *testing.T) {
@@ -39,17 +73,7 @@ func TestUrlParameterBagAddsParameter(t *testing.T) {
 
 	bag.add("param1", "v1")
 
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) == 0 {
-		t.Errorf("")
-	}
-
-	if bag.params[0].name != "param1" {
-		t.Errorf("")
-	}
+	assertBagParameterContains(t, bag, "param1", "v1")
 }
 
 func TestUrlParameterBagAddsMultipleParameters(t *testing.T) {
@@ -57,66 +81,12 @@ func TestUrlParameterBagAddsMultipleParameters(t *testing.T) {
 
 	bag.add("param1", "v1")
 	bag.add("param2", "v2")
-
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) != 2 {
-		t.Errorf("")
-	}
-
-	if bag.params[0].name != "param1" {
-		t.Errorf("")
-	}
-	if bag.params[0].value != "v1" {
-		t.Errorf("")
-	}
-
-	if bag.params[1].name != "param2" {
-		t.Errorf("")
-	}
-
-	if bag.params[1].value != "v2" {
-		t.Errorf("")
-	}
-}
-
-func TestUrlParameterBagGetByName(t *testing.T) {
-	bag := URLParameterBag{}
-
-	bag.add("param1", "v1")
-	bag.add("param2", "v2")
 	bag.add("param3", "v3")
 
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) != 3 {
-		t.Errorf("")
-	}
-
-	v, err := bag.GetByName("param1")
-	if v != "v1" || err != nil {
-		t.Errorf("")
-	}
-
-	v, _ = bag.GetByName("param2")
-	if v != "v2" || err != nil {
-		t.Errorf("")
-	}
-
-	v, _ = bag.GetByName("param3")
-	if v != "v3" || err != nil {
-		t.Errorf("")
-	}
-
-	v, err = bag.GetByName("param4")
-
-	if v != "" || err == nil {
-		t.Errorf("")
-	}
+	assertBagParameterContains(t, bag, "param1", "v1")
+	assertBagParameterContains(t, bag, "param2", "v2")
+	assertBagParameterContains(t, bag, "param3", "v3")
+	assertBagParameterNotContains(t, bag, "param4")
 }
 
 func TestUrlParameterBagGetByNameInReverseMode(t *testing.T) {
@@ -127,34 +97,10 @@ func TestUrlParameterBagGetByNameInReverseMode(t *testing.T) {
 	bag.add("param3", "v3")
 	bag.add("param1", "v4")
 
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) != 4 {
-		t.Errorf("")
-	}
-
-	v, err := bag.GetByName("param1")
-	if v != "v4" || err != nil {
-		t.Errorf("")
-	}
-
-	v, _ = bag.GetByName("param2")
-	if v != "v2" || err != nil {
-		t.Errorf("")
-	}
-
-	v, _ = bag.GetByName("param3")
-	if v != "v3" || err != nil {
-		t.Errorf("")
-	}
-
-	v, err = bag.GetByName("param4")
-
-	if v != "" || err == nil {
-		t.Errorf("")
-	}
+	assertBagParameterContains(t, bag, "param1", "v4")
+	assertBagParameterContains(t, bag, "param2", "v2")
+	assertBagParameterContains(t, bag, "param3", "v3")
+	assertBagParameterNotContains(t, bag, "param4")
 }
 
 func TestUrlParameterBagGetByIndex(t *testing.T) {
@@ -164,33 +110,10 @@ func TestUrlParameterBagGetByIndex(t *testing.T) {
 	bag.add("param2", "v2")
 	bag.add("param3", "v3")
 
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) != 3 {
-		t.Errorf("")
-	}
-
-	v, err := bag.GetByIndex(0)
-	if v != "v1" || err != nil {
-		t.Errorf("")
-	}
-
-	v, err = bag.GetByIndex(1)
-	if v != "v2" || err != nil {
-		t.Errorf("")
-	}
-
-	v, err = bag.GetByIndex(2)
-	if v != "v3" || err != nil {
-		t.Errorf("")
-	}
-
-	v, err = bag.GetByIndex(3)
-	if v != "" || err == nil {
-		t.Errorf("")
-	}
+	assertBagParameterAtIndex(t, bag, 0, "v1")
+	assertBagParameterAtIndex(t, bag, 1, "v2")
+	assertBagParameterAtIndex(t, bag, 2, "v3")
+	assertBagParameterNotAtIndex(t, bag, 3)
 }
 
 func TestUrlParameterBagGetByIndexInReverseMode(t *testing.T) {
@@ -200,31 +123,8 @@ func TestUrlParameterBagGetByIndexInReverseMode(t *testing.T) {
 	bag.add("param2", "v2")
 	bag.add("param1", "v1")
 
-	if bag.params == nil {
-		t.Errorf("")
-	}
-
-	if len(bag.params) != 3 {
-		t.Errorf("")
-	}
-
-	v, err := bag.GetByIndex(0)
-	if v != "v1" || err != nil {
-		t.Errorf("")
-	}
-
-	v, err = bag.GetByIndex(1)
-	if v != "v2" || err != nil {
-		t.Errorf("")
-	}
-
-	v, err = bag.GetByIndex(2)
-	if v != "v3" || err != nil {
-		t.Errorf("")
-	}
-
-	v, err = bag.GetByIndex(3)
-	if v != "" || err == nil {
-		t.Errorf("")
-	}
+	assertBagParameterAtIndex(t, bag, 0, "v1")
+	assertBagParameterAtIndex(t, bag, 1, "v2")
+	assertBagParameterAtIndex(t, bag, 2, "v3")
+	assertBagParameterNotAtIndex(t, bag, 3)
 }

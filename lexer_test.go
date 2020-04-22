@@ -2,6 +2,20 @@ package routing
 
 import "testing"
 
+func validateTokens(expectedTokens, tokens []token, t *testing.T) {
+	for index, token := range tokens {
+		if token.t != expectedTokens[index].t || token.v != expectedTokens[index].v {
+			t.Errorf(
+				"expected token: %v,%v but got %v,%v",
+				expectedTokens[index].t,
+				expectedTokens[index].v,
+				token.t,
+				token.v,
+			)
+		}
+	}
+}
+
 func TestSimplePath(t *testing.T) {
 	lexer := newLexer("/path1")
 
@@ -212,18 +226,4 @@ func TestWithExpRegular(t *testing.T) {
 		{v: "", t: tEnd},
 	}
 	validateTokens(expectedTokens, tokens, t)
-}
-
-func validateTokens(expectedTokens, tokens []token, t *testing.T) {
-	for index, token := range tokens {
-		if token.t != expectedTokens[index].t || token.v != expectedTokens[index].v {
-			t.Errorf(
-				"Expected token: %v,%v but got %v,%v",
-				expectedTokens[index].t,
-				expectedTokens[index].v,
-				token.t,
-				token.v,
-			)
-		}
-	}
 }
