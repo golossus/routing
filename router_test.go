@@ -7,335 +7,125 @@ import (
 	"testing"
 )
 
-func TestTreeRouter(t *testing.T) {
-	router := Router{}
+var testHandlerFunc = func(response http.ResponseWriter, request *http.Request) {
+	fmt.Fprint(response, request.URL.Path)
+}
 
-	flag := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	router.Register(http.MethodGet, "/path1", nil)
-	router.Register(http.MethodGet, "/path2", f)
+func assertPathFound(t *testing.T, router Router, method, path string) {
+	r, _ := http.NewRequest(method, path, nil)
+	w := httptest.NewRecorder()
 
-	request, _ := http.NewRequest("GET", "/path2", nil)
-	router.ServeHTTP(nil, request)
+	router.ServeHTTP(w, r)
 
-	if !flag {
-		t.Errorf("Handler not match ")
+	if w.Result().StatusCode != 200 || w.Body.String() != path {
+		t.Errorf("%s %s not found", method, path)
 	}
 }
 
-func TestTreeRouterRegistrationOrder(t *testing.T) {
-	router := Router{}
+func assertPathNotFound(t *testing.T, router Router, method, path string) {
+	r, _ := http.NewRequest(method, path, nil)
+	w := httptest.NewRecorder()
 
-	flag := false
-	flag2 := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	f2 := func(response http.ResponseWriter, request *http.Request) {
-		flag2 = true
-	}
-	router.Register(http.MethodGet, "/1/classes/{className}/{objectId}", f)
-	router.Register(http.MethodGet, "/1/classes/{className}", f2)
+	router.ServeHTTP(w, r)
 
-	request, _ := http.NewRequest("GET", "/1/classes/:className/:objectId", nil)
-	router.ServeHTTP(nil, request)
-
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-
-	request, _ = http.NewRequest("GET", "/1/classes/:className", nil)
-	router.ServeHTTP(nil, request)
-
-	if !flag2 {
-		t.Errorf("Handler2 not match ")
+	if w.Result().StatusCode != 404 {
+		t.Errorf("%s %s not found", method, path)
 	}
 }
 
-func TestTreeRouterMethod(t *testing.T) {
-	router := Router{}
+func assertRequestHasParameterHandler(t *testing.T, bag URLParameterBag) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		par := GetURLParameters(r)
 
-	flag := false
-	flag2 := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	f2 := func(response http.ResponseWriter, request *http.Request) {
-		flag2 = true
-	}
-	router.Register(http.MethodGet, "/1/classes/{className}", f)
-	router.Register(http.MethodPost, "/1/classes/{className}", f2)
+		if len(bag.params) != len(par.params) {
+			t.Errorf("Size of parameter bag doesn't match %d != %d", len(bag.params), len(par.params))
+		}
 
-	request, _ := http.NewRequest("GET", "/1/classes/:className", nil)
-	router.ServeHTTP(nil, request)
+		for i := 0; i < len(bag.params); i++ {
+			bagValue, _ := bag.GetByIndex(uint(i))
+			parValue, _ := par.GetByIndex(uint(i))
+			if bagValue != parValue {
+				t.Errorf("Parameter at index %d don't match", i)
+			}
+		}
 
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-
-	request, _ = http.NewRequest("POST", "/1/classes/:className", nil)
-	router.ServeHTTP(nil, request)
-
-	if !flag2 {
-		t.Errorf("Handler2 not match ")
+		testHandlerFunc(w, r)
 	}
 }
 
-func TestTreeRouterDynamicStops(t *testing.T) {
+func TestTreeRouterFindsPaths(t *testing.T) {
 	router := Router{}
 
-	flag := false
-	flag2 := false
-	f := func(response http.ResponseWriter, request *http.Request) {
-		flag = true
-	}
-	f2 := func(response http.ResponseWriter, request *http.Request) {
-		flag2 = true
-	}
-	router.Register(http.MethodGet, "/activities/{activityId}/people/{collection}", f)
-	router.Register(http.MethodGet, "/activities/{activityId}/comments", f2)
+	_ = router.Register(http.MethodGet, "/path1", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path2", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/1/classes/{className}/{objectId}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/1/classes/{className}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/1/classes/{className}", testHandlerFunc)
+	_ = router.Register(http.MethodPost, "/1/classes/{className}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/activities/{activityId}/people/{collection}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/activities/{activityId}/comments", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/users/{user}/starred", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/user/starred", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/users", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path1/{id}", testHandlerFunc)
+	_ = router.Register(http.MethodPost, "/path1", testHandlerFunc)
+	_ = router.Register(http.MethodPut, "/path1/{id}", testHandlerFunc)
+	_ = router.Register(http.MethodDelete, "/path1/{id}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", testHandlerFunc)
 
-	request, _ := http.NewRequest("GET", "/activities/:activityId/people/:collection", nil)
-	response := httptest.NewRecorder()
-	router.ServeHTTP(response, request)
-
-	if !flag {
-		t.Errorf("Handler not match ")
-	}
-
-	request, _ = http.NewRequest("GET", "/activities/:activityId/comments", nil)
-	response = httptest.NewRecorder()
-	router.ServeHTTP(response, request)
-
-	if !flag2 {
-		t.Errorf("Handler2 not match ")
-	}
-}
-
-func TestTreeRouterRegistrationDifferentOrdersDynamicAndStaticRoutes(t *testing.T) {
-	router := Router{}
-
-	f := func(response http.ResponseWriter, request *http.Request) {
-		fmt.Fprint(response, request.URL.Path)
-	}
-
-	router.Register(http.MethodGet, "/users/{user}/starred", nil)
-	router.Register(http.MethodGet, "/user/starred", f)
-	router.Register(http.MethodGet, "/users", nil)
-
-	request, _ := http.NewRequest("GET", "/user/starred", nil)
-	response := httptest.NewRecorder()
-	router.ServeHTTP(response, request)
-
-	if response.Result().StatusCode != 200 ||  response.Body.String() != "/user/starred" {
-		t.Errorf("/user/starred not found")
-	}
+	assertPathFound(t, router, "GET", "/path1")
+	assertPathFound(t, router, "GET", "/path2")
+	assertPathFound(t, router, "GET", "/1/classes/{className}/{objectId}")
+	assertPathFound(t, router, "GET", "/1/classes/{className}")
+	assertPathFound(t, router, "GET", "/1/classes/{className}")
+	assertPathFound(t, router, "POST", "/1/classes/{className}")
+	assertPathFound(t, router, "GET", "/activities/{activityId}/people/{collection}")
+	assertPathFound(t, router, "GET", "/activities/{activityId}/comments")
+	assertPathFound(t, router, "GET", "/users/{user}/starred")
+	assertPathFound(t, router, "GET", "/user/starred")
+	assertPathFound(t, router, "GET", "/users")
+	assertPathFound(t, router, "GET", "/path1/{id}")
+	assertPathFound(t, router, "POST", "/path1")
+	assertPathFound(t, router, "PUT", "/path1/{id}")
+	assertPathFound(t, router, "DELETE", "/path1/{id}")
+	assertPathFound(t, router, "GET", "/path1/100/abc")
+	assertPathNotFound(t, router, "GET", "/path1/100/123")
 }
 
 func TestGetURLParamatersBagInHandler(t *testing.T) {
 	router := Router{}
 
-	f := func(response http.ResponseWriter, request *http.Request) {
-		urlParameterBag := GetURLParameters(request)
-		if 2 != len(urlParameterBag.params) {
-			t.Errorf("")
-		}
-		id, _ := urlParameterBag.GetByName("id")
-		if "100" != id {
-			t.Errorf("")
-		}
+	bag := newURLParameterBag(2, false)
+	bag.add("id", "100")
+	bag.add("name", "dummy")
 
-		name, _ := urlParameterBag.GetByName("name")
-		if "dummy" != name {
-			t.Errorf("")
-		}
-	}
-	router.Register(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]{1,5}}", f)
+	f := assertRequestHasParameterHandler(t, bag)
+	_ = router.Register(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]{1,5}}", f)
 
-	request, _ := http.NewRequest("GET", "/path1/100/dummy", nil)
-	router.ServeHTTP(nil, request)
-
-}
-
-func TestGetURLParamatersFailsIfRegExpFails(t *testing.T) {
-
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		}
-	}()
-
-	router := Router{}
-
-	f := func(response http.ResponseWriter, request *http.Request) {}
-	router.Register(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", f)
-
-	request, _ := http.NewRequest("GET", "/path1/100/123", nil)
-	router.ServeHTTP(nil, request)
-
-}
-
-func TestVariosVerbsMatching(t *testing.T) {
-	router := Router{}
-
-	flag := 0
-	f1 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodGet {
-			t.Errorf("")
-		}
-		flag++
-	}
-
-	f2 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodGet {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f3 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodPost {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f4 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodPut {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f5 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodDelete {
-			t.Errorf("")
-		}
-		flag++
-	}
-
-	router.Register(http.MethodGet, "/path1", f1)
-	router.Register(http.MethodGet, "/path1/{id}", f2)
-	router.Register(http.MethodPost, "/path1", f3)
-	router.Register(http.MethodPut, "/path1/{id}", f4)
-	router.Register(http.MethodDelete, "/path1/{id}", f5)
-
-	request, _ := http.NewRequest(http.MethodGet, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodGet, "/path1/100", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodPost, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodPut, "/path1/100", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodDelete, "/path1/100", nil)
-	router.ServeHTTP(nil, request)
-
-	if flag != 5 {
-		t.Errorf("")
-	}
-
+	assertPathFound(t, router, "GET", "/path1/100/dummy")
 }
 
 func TestVerbsMethodsAreWorking(t *testing.T) {
+	path := "/path1"
+
 	router := Router{}
+	_ = router.Get(path, testHandlerFunc)
+	_ = router.Head(path, testHandlerFunc)
+	_ = router.Post(path, testHandlerFunc)
+	_ = router.Put(path, testHandlerFunc)
+	_ = router.Patch(path, testHandlerFunc)
+	_ = router.Delete(path, testHandlerFunc)
+	_ = router.Connect(path, testHandlerFunc)
+	_ = router.Options(path, testHandlerFunc)
+	_ = router.Trace(path, testHandlerFunc)
 
-	flag := 0
-	f1 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodGet {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f2 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodHead {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f3 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodPost {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f4 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodPut {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f5 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodPatch {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f6 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodDelete {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f7 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodConnect {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f8 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodOptions {
-			t.Errorf("")
-		}
-		flag++
-	}
-	f9 := func(response http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodTrace {
-			t.Errorf("")
-		}
-		flag++
-	}
-	router.Get("/path1", f1)
-	router.Head("/path1", f2)
-	router.Post("/path1", f3)
-	router.Put("/path1", f4)
-	router.Patch("/path1", f5)
-	router.Delete("/path1", f6)
-	router.Connect("/path1", f7)
-	router.Options("/path1", f8)
-	router.Trace("/path1", f9)
-
-	request, _ := http.NewRequest(http.MethodGet, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodHead, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodPost, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodPut, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodPatch, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodDelete, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodConnect, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodOptions, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	request, _ = http.NewRequest(http.MethodTrace, "/path1", nil)
-	router.ServeHTTP(nil, request)
-
-	if flag != 9 {
-		t.Errorf("")
-	}
+	assertPathFound(t, router, "GET", path)
+	assertPathFound(t, router, "HEAD", path)
+	assertPathFound(t, router, "POST", path)
+	assertPathFound(t, router, "PUT", path)
+	assertPathFound(t, router, "PATCH", path)
+	assertPathFound(t, router, "DELETE", path)
+	assertPathFound(t, router, "CONNECT", path)
+	assertPathFound(t, router, "OPTIONS", path)
+	assertPathFound(t, router, "TRACE", path)
 }
