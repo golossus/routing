@@ -72,6 +72,16 @@ func TestTreeRouterFindsPaths(t *testing.T) {
 	_ = router.Register(http.MethodPut, "/path1/{id}", testHandlerFunc)
 	_ = router.Register(http.MethodDelete, "/path1/{id}", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]+}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path1/{id}/path2", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path1/{id}-path2", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/{date}/", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path3/{slug:[0-9]+}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path3/{slug:.*}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path4/{id:[0-9]+}", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/path4/{id:[0-9]+}/{slug:[a-z]+}", testHandlerFunc)
+
 
 	assertPathFound(t, router, "GET", "/path1")
 	assertPathFound(t, router, "GET", "/path2")
@@ -89,6 +99,16 @@ func TestTreeRouterFindsPaths(t *testing.T) {
 	assertPathFound(t, router, "PUT", "/path1/{id}")
 	assertPathFound(t, router, "DELETE", "/path1/{id}")
 	assertPathFound(t, router, "GET", "/path1/100/abc")
+	assertPathFound(t, router, "GET", "/path1/100/path2")
+	assertPathFound(t, router, "GET", "/path1/100-path2")
+	assertPathFound(t, router, "GET", "/october/")
+	assertPathFound(t, router, "GET", "/2019-02-20")
+	assertPathFound(t, router, "GET", "/2019-02-20/")
+	assertPathFound(t, router, "GET", "/path3/00545")
+	assertPathFound(t, router, "GET", "/path3/00545/5456/file/file.jpg")
+	assertPathFound(t, router, "GET", "/path4/00545")
+	assertPathFound(t, router, "GET", "/path4/00545/abc")
+
 	assertPathNotFound(t, router, "GET", "/path1/100/123")
 }
 
@@ -98,11 +118,22 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 	bag := newURLParameterBag(2, false)
 	bag.add("id", "100")
 	bag.add("name", "dummy")
-
 	f := assertRequestHasParameterHandler(t, bag)
-	_ = router.Register(http.MethodGet, "/path1/{id:[0-9]+}/{name:[a-z]{1,5}}", f)
+	_ = router.Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", f)
+
+	bag2 := newURLParameterBag(2, false)
+	bag2.add("name", "dummy/file/src/image.jpg")
+	f2 := assertRequestHasParameterHandler(t, bag2)
+	_ = router.Register(http.MethodGet, "/path1/{name:.*}", f2)
+
+	bag3 := newURLParameterBag(2, false)
+	bag3.add("name", "2020-05-05")
+	f3 := assertRequestHasParameterHandler(t, bag3)
+	_ = router.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", f3)
 
 	assertPathFound(t, router, "GET", "/path1/100/dummy")
+	assertPathFound(t, router, "GET", "/path1/dummy/file/src/image.jpg")
+	assertPathFound(t, router, "GET", "/2020-05-05")
 }
 
 func TestVerbsMethodsAreWorking(t *testing.T) {
