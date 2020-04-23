@@ -204,9 +204,10 @@ func TestCreateTreeFromChunksWorks(t *testing.T) {
 		{t: tChunkStatic, v: "/abc"},
 	}
 
-	root := createTreeFromChunks(chunks, nodePrefixHandler("/abc"))
+	root, leaf := createTreeFromChunks(chunks)
 
 	assertNodeStatic(t, root, "/", false)
 	assertNodeDynamic(t, root.child, "id", "", false)
-	assertNodeStatic(t, root.child.stops['/'], "/abc", true)
+	assertNodeStatic(t, root.child.stops['/'], "/abc", false)
+	assertNodeStatic(t, leaf, "/abc", false)
 }

@@ -9,9 +9,14 @@ type paramsKey int
 
 var ctxKey paramsKey
 
-// GetURLParameters is in charge of retrieve dynamic parameter of the URL within your route. For example, User's ID in /users/{userId}
+// GetURLParameters is in charge of retrieve dynamic parameter of the URL within your route.
+// For example, User's ID in /users/{userId}
 func GetURLParameters(request *http.Request) URLParameterBag {
-	return request.Context().Value(ctxKey).(URLParameterBag)
+	ctx := request.Context().Value(ctxKey)
+	if ctx == nil {
+		return newURLParameterBag(0, true)
+	}
+	return ctx.(URLParameterBag)
 }
 
 // Router is a structure where all routes are stored
@@ -126,6 +131,37 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
 	}
 
 	r.trees[verb].insert(parser.chunks, handler)
+
+	return nil
+}
+
+// Prefix combines two routers under a custom path prefix
+func (r *Router) Prefix(path string, router *Router) error {
+	parser := newParser(path)
+	_, err := parser.parse()
+	if err != nil {
+		return err
+	}
+
+	if nil == r.trees {
+		r.trees = make(map[string]*tree)
+	}
+
+	for verb, t := range router.trees {
+		if _, ok := r.trees[verb]; !ok {
+			r.trees[verb] = &tree{}
+		}
+
+		rootNew, leafNew := createTreeFromChunks(parser.chunks)
+
+		if leafNew.t == nodeTypeDynamic {
+			leafNew.stops[t.root.prefix[0]] = t.root
+		} else {
+			leafNew.child = t.root
+		}
+
+		r.trees[verb].root = combine(r.trees[verb].root, rootNew)
+	}
 
 	return nil
 }

@@ -14,7 +14,10 @@ type tree struct {
 }
 
 func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) {
-	t.root = combine(t.root, createTreeFromChunks(chunks, handler))
+	root2, leaf2 := createTreeFromChunks(chunks)
+	leaf2.handler = handler
+
+	t.root = combine(t.root, root2)
 }
 
 func combine(tree1 *node, tree2 *node) *node {
@@ -108,13 +111,13 @@ func combine(tree1 *node, tree2 *node) *node {
 	return tree1
 }
 
-func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) *node {
+func createTreeFromChunks(chunks []chunk) (root, leaf *node) {
 
 	if len(chunks) < 1 {
-		return nil
+		return nil, nil
 	}
 
-	var root = createNodeFromChunk(chunks[0])
+	root = createNodeFromChunk(chunks[0])
 	n := root
 
 	for i := 1; i < len(chunks); i++ {
@@ -128,9 +131,7 @@ func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) *node {
 		n = newNode
 	}
 
-	n.handler = handler
-
-	return root
+	return root, n
 }
 
 func createNodeFromChunk(c chunk) *node {
