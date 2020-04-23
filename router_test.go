@@ -11,6 +11,10 @@ var testHandlerFunc = func(response http.ResponseWriter, request *http.Request) 
 	fmt.Fprint(response, request.URL.Path)
 }
 
+var testDummyHandlerFunc = func(response http.ResponseWriter, request *http.Request) {
+	fmt.Fprint(response, "dummy")
+}
+
 func assertPathFound(t *testing.T, router Router, method, path string) {
 	r, _ := http.NewRequest(method, path, nil)
 	w := httptest.NewRecorder()
@@ -50,6 +54,21 @@ func assertRequestHasParameterHandler(t *testing.T, bag URLParameterBag) http.Ha
 		}
 
 		testHandlerFunc(w, r)
+	}
+}
+
+func assertRouteNameHasHandler(t *testing.T, mainRouter Router, method, path, routeName string) {
+	leaf, ok := mainRouter.routes[routeName]
+	if !ok {
+		t.Errorf("route name %s not found", routeName)
+	}
+
+	r, _ := http.NewRequest(method, path, nil)
+	w := httptest.NewRecorder()
+	leaf.handler(w, r)
+
+	if w.Result().StatusCode != 200 || w.Body.String() != path {
+		t.Errorf("%s %s not found as %s route name", method, path, routeName)
 	}
 }
 
@@ -208,7 +227,6 @@ func TestTreeRouterFindsPathsWhenPrefixingRouters(t *testing.T) {
 	_ = path1Router.Register(http.MethodGet, "/{id}/path2", testHandlerFunc)
 	_ = path1Router.Register(http.MethodGet, "/{id}-path2", testHandlerFunc)
 
-
 	userRouter := Router{}
 	_ = userRouter.Register(http.MethodGet, "/profile", testHandlerFunc)
 	_ = userRouter.Register(http.MethodGet, "/{date}/posts", testHandlerFunc)
@@ -245,4 +263,65 @@ func TestTreeRouterFindsPathsWhenPrefixingRouters(t *testing.T) {
 	assertPathFound(t, mainRouter, "GET", "/user/5/2020-03-01/posts")
 
 	assertPathNotFound(t, mainRouter, "GET", "/path1/100/123")
+}
+
+func TestTreeRouterAssignsRouteNames(t *testing.T) {
+	mainRouter := Router{}
+
+	_ = mainRouter.As("users.get").Get("/users", testHandlerFunc)
+	_ = mainRouter.As("users.create").Post("/users", testHandlerFunc)
+	_ = mainRouter.As("users.create").Post("/users/create", testHandlerFunc)
+	_ = mainRouter.As("users.update").Put("/users/{id}", testHandlerFunc)
+	_ = mainRouter.As("users.delete").Delete("/users/{id}", testDummyHandlerFunc)
+	_ = mainRouter.As("users.softDelete").Delete("/users/{id}", testHandlerFunc)
+	_ = mainRouter.Get("/users/profile", testDummyHandlerFunc)
+
+	apiRouter := Router{}
+	_ = apiRouter.As("users.account").Get("/users/account", testHandlerFunc)
+	_ = apiRouter.As("users.profile").Get("/users/profile", testHandlerFunc)
+
+	mainRouter.As("api.").Prefix("/api", &apiRouter)
+
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/users", "users.get")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodPost, "/users/create", "users.create")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodPut, "/users/100", "users.update")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.delete")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.softDelete")
+
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "api.users.account")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
+}
+
+func TestTreeRouterGenerateValidRoutes(t *testing.T) {
+	mainRouter := Router{}
+
+	_ = mainRouter.As("path1").Register(http.MethodGet, "/path1", testHandlerFunc)
+	_ = mainRouter.As("path1.id.name").Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", testHandlerFunc)
+	_ = mainRouter.As("path1.file").Register(http.MethodGet, "/path1/{file:.*}", testHandlerFunc)
+	_ = mainRouter.As("date").Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
+
+	postsRouter := Router{}
+	_ = postsRouter.As("date").Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
+
+	_ = mainRouter.As("posts.id.").Prefix("/posts/{id}", &postsRouter)
+
+	assertRouteIsGenerated(t, mainRouter, "path1", "/path1", map[string]string{})
+	assertRouteIsGenerated(t, mainRouter, "path1.id.name", "/path1/100/abc", map[string]string{"id": "100", "name": "abc"})
+	assertRouteIsGenerated(t, mainRouter, "path1.file", "/path1/100/2098939/image.jpg", map[string]string{"file": "100/2098939/image.jpg"})
+	assertRouteIsGenerated(t, mainRouter, "date", "/2020-05-05", map[string]string{"date": "2020-05-05"})
+	assertRouteIsGenerated(t, mainRouter, "posts.id.date", "/posts/10/2020-05-05", map[string]string{"id": "10", "date": "2020-05-05"})
+}
+
+func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
+	bag := URLParameterBag{}
+	for key, value := range params {
+		bag.add(key, value)
+	}
+	route2, err2 := mainRouter.GenerateURL(name, bag)
+	if err2 != nil {
+		t.Errorf("route %s not generated", name)
+	}
+	if route2 != url {
+		t.Errorf("route %s not valid", name)
+	}
 }
