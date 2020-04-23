@@ -34,7 +34,12 @@ func combine(tree1 *node, tree2 *node) *node {
 		if tree2.t == nodeTypeDynamic && tree2.prefix == tree1.prefix {
 			if !tree1.regexpEquals(tree2) {
 				tree1.sibling = combine(tree1.sibling, tree2)
+				tree1.sibling.parent = tree1
 				return tree1
+			}
+
+			for k, _ := range tree2.stops {
+				tree2.stops[k].parent = tree1
 			}
 
 			for k, next1 := range tree1.stops {
@@ -55,17 +60,20 @@ func combine(tree1 *node, tree2 *node) *node {
 
 		if tree2.t == nodeTypeDynamic && tree2.prefix != tree1.prefix {
 			tree1.sibling = combine(tree1.sibling, tree2)
+			tree1.sibling.parent = tree1.parent
 			return tree1
 		}
 
 		if tree2.t == nodeTypeStatic {
 			tree2.sibling = tree1
+			tree2.parent = tree1.parent
 			return tree2
 		}
 	}
 
 	if tree2.t == nodeTypeDynamic {
 		tree1.sibling = combine(tree1.sibling, tree2)
+		tree1.sibling.parent = tree1.parent
 		return tree1
 	}
 
@@ -73,11 +81,13 @@ func combine(tree1 *node, tree2 *node) *node {
 
 	if pos == 0 {
 		tree1.sibling = combine(tree1.sibling, tree2)
+		tree1.sibling.parent = tree1.parent
 		return tree1
 	}
 
 	if pos == len(tree1.prefix) && pos != len(tree2.prefix) {
 		tree2.prefix = tree2.prefix[pos:]
+		tree2.parent = tree1
 		tree1.child = combine(tree1.child, tree2)
 		return tree1
 	}
@@ -86,20 +96,25 @@ func combine(tree1 *node, tree2 *node) *node {
 		tree1.prefix = tree1.prefix[pos:]
 		tree2.sibling = tree1.sibling
 		tree1.sibling = nil
+		tree1.parent = tree2
 		tree2.child = combine(tree1, tree2.child)
 		return tree2
 	}
 
 	if pos != len(tree1.prefix) && pos != len(tree2.prefix) {
 		split := createNodeFromChunk(chunk{t: tChunkStatic, v: tree1.prefix[:pos]})
+		split.parent = tree1.parent
 		split.sibling = tree1.sibling
 
 		tree1.prefix = tree1.prefix[pos:]
+		tree1.parent = split
 		tree1.sibling = nil
 
 		tree2.prefix = tree2.prefix[pos:]
+		tree2.parent = split
 
 		split.child = combine(tree1, tree2)
+
 		return split
 	}
 
@@ -108,6 +123,7 @@ func combine(tree1 *node, tree2 *node) *node {
 	}
 
 	tree1.child = combine(tree1.child, tree2.child)
+	tree1.child.parent = tree1
 	return tree1
 }
 
@@ -127,7 +143,7 @@ func createTreeFromChunks(chunks []chunk) (root, leaf *node) {
 		} else {
 			n.child = newNode
 		}
-
+		newNode.parent = n
 		n = newNode
 	}
 
@@ -146,13 +162,11 @@ func createNodeFromChunk(c chunk) *node {
 	return n
 }
 
-func (t *tree) find(path string) (http.HandlerFunc, URLParameterBag) {
-	urlParameterBag := newURLParameterBag(5, true)
-
-	return find(t.root, path, &urlParameterBag), urlParameterBag
+func (t *tree) find(path string) *node {
+	return find(t.root, path)
 }
 
-func find(n *node, p string, urlParameterBag *URLParameterBag) http.HandlerFunc {
+func find(n *node, p string) *node {
 	if nil == n || len(p) == 0 {
 		return nil
 	}
@@ -168,16 +182,15 @@ func find(n *node, p string, urlParameterBag *URLParameterBag) http.HandlerFunc 
 				}
 				if validExpression {
 					traversed = true
-					h := find(next, p[i:], urlParameterBag)
-					if nil != h {
-						urlParameterBag.add(n.prefix, p[0:i])
+					h := find(next, p[i:])
+					if nil != h && nil != h.handler {
 						return h
 					}
 				}
 			}
 
 			if p[i] == '/' && !n.isCatchAll() {
-				return find(n.sibling, p, urlParameterBag)
+				return find(n.sibling, p)
 			}
 		}
 
@@ -187,25 +200,28 @@ func find(n *node, p string, urlParameterBag *URLParameterBag) http.HandlerFunc 
 				validExpression = n.regexp.MatchString(p)
 			}
 			if validExpression {
-				urlParameterBag.add(n.prefix, p)
-				return n.handler
+				return n
 			}
 		}
 
-		return find(n.sibling, p, urlParameterBag)
+		return find(n.sibling, p)
 	}
 
 	pos := common(p, n.prefix)
 	if pos == 0 {
-		return find(n.sibling, p, urlParameterBag)
+		return find(n.sibling, p)
 	}
 
 	if pos == len(p) && len(p) == len(n.prefix) {
-		return n.handler
+		if nil != n.handler {
+			return n
+		}
+
+		return nil
 	}
 
-	h := find(n.child, p[pos:], urlParameterBag)
-	if nil != h {
+	h := find(n.child, p[pos:])
+	if nil != h && nil != h.handler {
 		return h
 	}
 
@@ -214,7 +230,7 @@ func find(n *node, p string, urlParameterBag *URLParameterBag) http.HandlerFunc 
 			continue
 		}
 
-		return find(next, p, urlParameterBag)
+		return find(next, p)
 	}
 
 	return nil
