@@ -3,6 +3,7 @@ package routing
 import (
 	"context"
 	"net/http"
+	"strings"
 )
 
 type paramsKey int
@@ -16,7 +17,30 @@ func GetURLParameters(request *http.Request) URLParameterBag {
 	if ctx == nil {
 		return newURLParameterBag(0, true)
 	}
-	return ctx.(URLParameterBag)
+
+	leaf := ctx.(*node)
+
+	path := request.URL.Path
+	return buildURLParameters(leaf, path, len(path), 0)
+}
+
+func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) URLParameterBag {
+
+	if leaf == nil {
+		return newURLParameterBag(paramsCount, false)
+	}
+
+	var paramsBag URLParameterBag
+
+	if leaf.t == nodeTypeDynamic {
+		start := strings.LastIndex(path[:offset], leaf.parent.prefix) + len(leaf.parent.prefix)
+		paramsBag = buildURLParameters(leaf.parent, path, start, paramsCount+1)
+		paramsBag.add(leaf.prefix, path[start:offset])
+	} else {
+		paramsBag = buildURLParameters(leaf.parent, path, offset-len(leaf.prefix), paramsCount)
+	}
+
+	return paramsBag
 }
 
 // Router is a structure where all routes are stored
@@ -37,14 +61,14 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	handler, params := tree.find(request.URL.Path)
-	if handler == nil {
+	leaf := tree.find(request.URL.Path)
+	if leaf == nil {
 		http.NotFound(response, request)
 		return
 	}
 
 	ctx := context.Background()
-	handler(response, request.WithContext(context.WithValue(ctx, ctxKey, params)))
+	leaf.handler(response, request.WithContext(context.WithValue(ctx, ctxKey, leaf)))
 }
 
 // Head is a method to register a new HEAD route in the router.
@@ -153,6 +177,7 @@ func (r *Router) Prefix(path string, router *Router) error {
 		}
 
 		rootNew, leafNew := createTreeFromChunks(parser.chunks)
+		t.root.parent = leafNew
 
 		if leafNew.t == nodeTypeDynamic {
 			leafNew.stops[t.root.prefix[0]] = t.root

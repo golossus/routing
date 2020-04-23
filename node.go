@@ -13,6 +13,7 @@ type node struct {
 	prefix  string
 	handler http.HandlerFunc
 	child   *node
+	parent  *node
 	sibling *node
 	t       int
 	stops   map[byte]*node
