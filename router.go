@@ -214,6 +214,7 @@ func (r *Router) Prefix(path string, router *Router) error {
 	return nil
 }
 
+// GenerateURL generates a URL from route name
 func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error) {
 	node, ok := r.routes[name]
 	if !ok {
