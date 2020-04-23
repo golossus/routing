@@ -13,11 +13,13 @@ type tree struct {
 	root *node
 }
 
-func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) {
+func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) *node {
 	root2, leaf2 := createTreeFromChunks(chunks)
 	leaf2.handler = handler
 
 	t.root = combine(t.root, root2)
+
+	return leaf2
 }
 
 func combine(tree1 *node, tree2 *node) *node {

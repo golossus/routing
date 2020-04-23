@@ -2,6 +2,7 @@ package routing
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -45,7 +46,9 @@ func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) U
 
 // Router is a structure where all routes are stored
 type Router struct {
-	trees map[string]*tree
+	trees  map[string]*tree
+	asName string
+	routes map[string]*node
 }
 
 // NewRouter returns an empty Router
@@ -69,6 +72,12 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 
 	ctx := context.Background()
 	leaf.handler(response, request.WithContext(context.WithValue(ctx, ctxKey, leaf)))
+}
+
+// As method sets a name for the next registered route
+func (r *Router) As(asName string)  *Router {
+	r.asName = asName
+	return r
 }
 
 // Head is a method to register a new HEAD route in the router.
@@ -150,11 +159,20 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
 		r.trees = make(map[string]*tree)
 	}
 
+	if nil == r.routes {
+		r.routes = make(map[string]*node)
+	}
+
 	if _, ok := r.trees[verb]; !ok {
 		r.trees[verb] = &tree{}
 	}
 
-	r.trees[verb].insert(parser.chunks, handler)
+	leaf := r.trees[verb].insert(parser.chunks, handler)
+
+	if r.asName != "" {
+		r.routes[r.asName] = leaf
+		r.asName = ""
+	}
 
 	return nil
 }
@@ -188,5 +206,38 @@ func (r *Router) Prefix(path string, router *Router) error {
 		r.trees[verb].root = combine(r.trees[verb].root, rootNew)
 	}
 
+	for name, leaf := range router.routes {
+		r.routes[fmt.Sprintf("%s%s", r.asName, name)] = leaf
+	}
+	r.asName = ""
+
 	return nil
+}
+
+// GenerateURL generates a URL from route name
+func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error) {
+	node, ok := r.routes[name]
+	if !ok {
+		return "", fmt.Errorf("route name %s not found", name)
+	}
+
+	url := ""
+	for node != nil {
+
+		if node.t == nodeTypeStatic {
+			url = node.prefix + url
+		}else{
+			p, err := params.GetByName(node.prefix)
+			if err != nil {
+				return p, err
+			}
+			if node.regexp != nil && !node.regexp.MatchString(p) {
+				return "", fmt.Errorf("param %s with value %s is not valid", node.prefix, p)
+			}
+			url = p + url
+		}
+
+		node = node.parent
+	}
+	return url, nil
 }
