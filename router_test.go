@@ -112,27 +112,37 @@ func TestTreeRouterFindsPaths(t *testing.T) {
 }
 
 func TestGetURLParamatersBagInHandler(t *testing.T) {
-	router := Router{}
+	mainRouter := Router{}
+	postsRouter := Router{}
 
 	bag := newURLParameterBag(2, false)
 	bag.add("id", "100")
 	bag.add("name", "dummy")
 	f := assertRequestHasParameterHandler(t, bag)
-	_ = router.Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", f)
+	_ = mainRouter.Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", f)
 
 	bag2 := newURLParameterBag(2, false)
 	bag2.add("name", "dummy/file/src/image.jpg")
 	f2 := assertRequestHasParameterHandler(t, bag2)
-	_ = router.Register(http.MethodGet, "/path1/{name:.*}", f2)
+	_ = mainRouter.Register(http.MethodGet, "/path1/{name:.*}", f2)
 
 	bag3 := newURLParameterBag(2, false)
 	bag3.add("name", "2020-05-05")
 	f3 := assertRequestHasParameterHandler(t, bag3)
-	_ = router.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", f3)
+	_ = mainRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", f3)
 
-	assertPathFound(t, router, "GET", "/path1/100/dummy")
-	assertPathFound(t, router, "GET", "/path1/dummy/file/src/image.jpg")
-	assertPathFound(t, router, "GET", "/2020-05-05")
+	bag4 := newURLParameterBag(2, false)
+	bag4.add("id", "123")
+	bag4.add("name", "2020-05-05")
+	f4 := assertRequestHasParameterHandler(t, bag4)
+	_ = postsRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", f4)
+
+	mainRouter.Prefix("/posts/{id}", &postsRouter)
+
+	assertPathFound(t, mainRouter, "GET", "/path1/100/dummy")
+	assertPathFound(t, mainRouter, "GET", "/path1/dummy/file/src/image.jpg")
+	assertPathFound(t, mainRouter, "GET", "/2020-05-05")
+	assertPathFound(t, mainRouter, "GET", "/posts/123/2020-05-05")
 }
 
 func TestVerbsMethodsAreWorking(t *testing.T) {
@@ -158,4 +168,81 @@ func TestVerbsMethodsAreWorking(t *testing.T) {
 	assertPathFound(t, router, "CONNECT", path)
 	assertPathFound(t, router, "OPTIONS", path)
 	assertPathFound(t, router, "TRACE", path)
+}
+
+func TestGetURLParametersReturnsEmptyBagIfNoContextValueExists(t *testing.T) {
+	r, _ := http.NewRequest(http.MethodGet, "/dummy", nil)
+
+	bag := GetURLParameters(r)
+
+	assertBagSetting(t, bag, 0, true)
+}
+
+func TestTreeRouterFindsPathsWhenPrefixingRouters(t *testing.T) {
+	mainRouter := Router{}
+	_ = mainRouter.Register(http.MethodGet, "/path1", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/path2", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/1/classes/{className}/{objectId}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/1/classes/{className}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/1/classes/{className}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodPost, "/1/classes/{className}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/activities/{activityId}/people/{collection}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/activities/{activityId}/comments", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/users/{user}/starred", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/user/starred", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/users", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodPost, "/path1", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/{date}/", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/path3/{slug:[0-9]+}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/path3/{slug:.*}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/path4/{id:[0-9]+}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/path4/{id:[0-9]+}/{slug:[a-z]+}", testHandlerFunc)
+
+	path1Router := Router{}
+	_ = path1Router.Register(http.MethodGet, "/{id}", testHandlerFunc)
+	_ = path1Router.Register(http.MethodPut, "/{id}", testHandlerFunc)
+	_ = path1Router.Register(http.MethodDelete, "/{id}", testHandlerFunc)
+	_ = path1Router.Register(http.MethodGet, "/{id:[0-9]+}/{name:[a-z]+}", testHandlerFunc)
+	_ = path1Router.Register(http.MethodGet, "/{id}/path2", testHandlerFunc)
+	_ = path1Router.Register(http.MethodGet, "/{id}-path2", testHandlerFunc)
+
+
+	userRouter := Router{}
+	_ = userRouter.Register(http.MethodGet, "/profile", testHandlerFunc)
+	_ = userRouter.Register(http.MethodGet, "/{date}/posts", testHandlerFunc)
+
+	_ = mainRouter.Prefix("/path1", &path1Router)
+	_ = mainRouter.Prefix("/user/{id}", &userRouter)
+
+	assertPathFound(t, mainRouter, "GET", "/path1")
+	assertPathFound(t, mainRouter, "GET", "/path2")
+	assertPathFound(t, mainRouter, "GET", "/1/classes/{className}/{objectId}")
+	assertPathFound(t, mainRouter, "GET", "/1/classes/{className}")
+	assertPathFound(t, mainRouter, "GET", "/1/classes/{className}")
+	assertPathFound(t, mainRouter, "POST", "/1/classes/{className}")
+	assertPathFound(t, mainRouter, "GET", "/activities/{activityId}/people/{collection}")
+	assertPathFound(t, mainRouter, "GET", "/activities/{activityId}/comments")
+	assertPathFound(t, mainRouter, "GET", "/users/{user}/starred")
+	assertPathFound(t, mainRouter, "GET", "/user/starred")
+	assertPathFound(t, mainRouter, "GET", "/users")
+	assertPathFound(t, mainRouter, "GET", "/path1/{id}")
+	assertPathFound(t, mainRouter, "POST", "/path1")
+	assertPathFound(t, mainRouter, "PUT", "/path1/{id}")
+	assertPathFound(t, mainRouter, "DELETE", "/path1/{id}")
+	assertPathFound(t, mainRouter, "GET", "/path1/100/abc")
+	assertPathFound(t, mainRouter, "GET", "/path1/100/path2")
+	assertPathFound(t, mainRouter, "GET", "/path1/100-path2")
+	assertPathFound(t, mainRouter, "GET", "/october/")
+	assertPathFound(t, mainRouter, "GET", "/2019-02-20")
+	assertPathFound(t, mainRouter, "GET", "/2019-02-20/")
+	assertPathFound(t, mainRouter, "GET", "/path3/00545")
+	assertPathFound(t, mainRouter, "GET", "/path3/00545/5456/file/file.jpg")
+	assertPathFound(t, mainRouter, "GET", "/path4/00545")
+	assertPathFound(t, mainRouter, "GET", "/path4/00545/abc")
+	assertPathFound(t, mainRouter, "GET", "/user/5/profile")
+	assertPathFound(t, mainRouter, "GET", "/user/5/2020-03-01/posts")
+
+	assertPathNotFound(t, mainRouter, "GET", "/path1/100/123")
 }
