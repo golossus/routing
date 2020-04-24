@@ -38,3 +38,15 @@ func (n *node) regexpToString() string {
 	}
 	return n.regexp.String()
 }
+
+func (n *node) hasParameters() bool {
+	parent := n
+	for parent != nil {
+		if parent.t == nodeTypeDynamic {
+			return true
+		}
+		parent = parent.parent
+	}
+
+	return false
+}

@@ -95,8 +95,11 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	ctx := context.Background()
-	leaf.handler(response, request.WithContext(context.WithValue(ctx, ctxKey, leaf)))
+	if leaf.hasParameters() {
+		ctx := context.Background()
+		request = request.WithContext(context.WithValue(ctx, ctxKey, leaf))
+	}
+	leaf.handler(response, request)
 }
 
 // As method sets a name for the next registered route
