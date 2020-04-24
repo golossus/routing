@@ -266,3 +266,34 @@ func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error
 	}
 	return url, nil
 }
+
+// RouteDef defines a route definition
+type RouteDef struct {
+	Method  string
+	Schema  string
+	Handler string
+	Name    string
+}
+
+// Loader loads a list routes
+type Loader interface {
+	Load() []RouteDef
+}
+
+// Load registers a list of routes retrieved from a loader
+func (r *Router) Load(loader Loader) error {
+	for _, route := range loader.Load() {
+		handler, err := GetHandler(route.Handler)
+		if err != nil {
+			return err
+		}
+		if route.Name != "" {
+			r.As(route.Name)
+		}
+		err = r.Register(route.Method, route.Schema, handler)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

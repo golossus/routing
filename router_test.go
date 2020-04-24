@@ -325,3 +325,51 @@ func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, p
 		t.Errorf("route %s not valid", name)
 	}
 }
+
+type sliceLoader []RouteDef
+
+func (l *sliceLoader) Load() []RouteDef {
+	var x []RouteDef = *l
+	return x
+}
+
+func TestRouterLoadRegisterRoutes(t *testing.T) {
+	AddHandler(testHandlerFunc, "users.Handler")
+
+	router := NewRouter()
+	loader := sliceLoader{
+		RouteDef{Name: "get.users", Method: "GET", Schema: "/users", Handler: "users.Handler"},
+	}
+	err := router.Load(&loader)
+	if err != nil {
+		t.Error(err)
+	}
+	assertRouteIsGenerated(t, router, "get.users", "/users", nil)
+	assertPathFound(t, router, "GET", "/users")
+}
+
+func TestRouterLoadFailsWhenHandlerNoExists(t *testing.T) {
+	AddHandler(testHandlerFunc, "users.Handler")
+
+	router := NewRouter()
+	loader := sliceLoader{
+		RouteDef{Name: "get.users", Method: "GET", Schema: "/users", Handler: "users.Handler.no.exists"},
+	}
+	err := router.Load(&loader)
+	if err == nil {
+		t.Errorf("no registered Handler %s has been loaded", "users.Handler.no.exists")
+	}
+}
+
+func TestRouterLoadFailsWhenSchemaIsInvalid(t *testing.T) {
+	AddHandler(testHandlerFunc, "users.Handler")
+
+	router := NewRouter()
+	loader := sliceLoader{
+		RouteDef{Name: "get.users", Method: "GET", Schema: "users", Handler: "users.Handler.no.exists"},
+	}
+	err := router.Load(&loader)
+	if err == nil {
+		t.Errorf("invalid Schema %s has been loaded", "users")
+	}
+}
