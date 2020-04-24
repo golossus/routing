@@ -8,11 +8,11 @@ import (
 )
 
 var testHandlerFunc = func(response http.ResponseWriter, request *http.Request) {
-	fmt.Fprint(response, request.URL.Path)
+	_, _ = fmt.Fprint(response, request.URL.Path)
 }
 
 var testDummyHandlerFunc = func(response http.ResponseWriter, request *http.Request) {
-	fmt.Fprint(response, "dummy")
+	_, _ = fmt.Fprint(response, "dummy")
 }
 
 func assertPathFound(t *testing.T, router Router, method, path string) {
@@ -72,7 +72,7 @@ func assertRouteNameHasHandler(t *testing.T, mainRouter Router, method, path, ro
 	}
 }
 
-func TestTreeRouterFindsPaths(t *testing.T) {
+func TestRouter_ServeHTTP_FindsPaths(t *testing.T) {
 	router := Router{}
 
 	_ = router.Register(http.MethodGet, "/path1", testHandlerFunc)
@@ -130,7 +130,7 @@ func TestTreeRouterFindsPaths(t *testing.T) {
 	assertPathNotFound(t, router, "GET", "/path1/100/123")
 }
 
-func TestGetURLParamatersBagInHandler(t *testing.T) {
+func TestGetURLParameters(t *testing.T) {
 	mainRouter := Router{}
 	postsRouter := Router{}
 
@@ -164,7 +164,7 @@ func TestGetURLParamatersBagInHandler(t *testing.T) {
 	assertPathFound(t, mainRouter, "GET", "/posts/123/2020-05-05")
 }
 
-func TestVerbsMethodsAreWorking(t *testing.T) {
+func TestRouter_AllVerbs(t *testing.T) {
 	path := "/path1"
 
 	router := Router{}
@@ -189,7 +189,7 @@ func TestVerbsMethodsAreWorking(t *testing.T) {
 	assertPathFound(t, router, "TRACE", path)
 }
 
-func TestGetURLParametersReturnsEmptyBagIfNoContextValueExists(t *testing.T) {
+func TestGetURLParameters_ReturnsEmptyBagIfNoContextValueExists(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodGet, "/dummy", nil)
 
 	bag := GetURLParameters(r)
@@ -197,7 +197,7 @@ func TestGetURLParametersReturnsEmptyBagIfNoContextValueExists(t *testing.T) {
 	assertBagSetting(t, bag, 0, true)
 }
 
-func TestTreeRouterFindsPathsWhenPrefixingRouters(t *testing.T) {
+func TestRouter_ServeHTTP_FindsPathsWhenPrefixingRouters(t *testing.T) {
 	mainRouter := Router{}
 	_ = mainRouter.Register(http.MethodGet, "/path1", testHandlerFunc)
 	_ = mainRouter.Register(http.MethodGet, "/path2", testHandlerFunc)
@@ -265,7 +265,7 @@ func TestTreeRouterFindsPathsWhenPrefixingRouters(t *testing.T) {
 	assertPathNotFound(t, mainRouter, "GET", "/path1/100/123")
 }
 
-func TestTreeRouterAssignsRouteNames(t *testing.T) {
+func TestRouter_As_AssignsRouteNames(t *testing.T) {
 	mainRouter := Router{}
 
 	_ = mainRouter.As("users.get").Get("/users", testHandlerFunc)
@@ -292,7 +292,7 @@ func TestTreeRouterAssignsRouteNames(t *testing.T) {
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
 }
 
-func TestTreeRouterGenerateValidRoutes(t *testing.T) {
+func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	mainRouter := Router{}
 
 	_ = mainRouter.As("path1").Register(http.MethodGet, "/path1", testHandlerFunc)
@@ -333,7 +333,7 @@ func (l *sliceLoader) Load() []RouteDef {
 	return x
 }
 
-func TestRouterLoadRegisterRoutes(t *testing.T) {
+func TestRouter_Load_RegisterRoutes(t *testing.T) {
 	AddHandler(testHandlerFunc, "users.Handler")
 
 	router := NewRouter()
@@ -348,7 +348,7 @@ func TestRouterLoadRegisterRoutes(t *testing.T) {
 	assertPathFound(t, router, "GET", "/users")
 }
 
-func TestRouterLoadFailsWhenHandlerNoExists(t *testing.T) {
+func TestRouter_Load_FailsWhenHandlerNoExists(t *testing.T) {
 	AddHandler(testHandlerFunc, "users.Handler")
 
 	router := NewRouter()
@@ -361,7 +361,7 @@ func TestRouterLoadFailsWhenHandlerNoExists(t *testing.T) {
 	}
 }
 
-func TestRouterLoadFailsWhenSchemaIsInvalid(t *testing.T) {
+func TestRouter_Load_FailsWhenSchemaIsInvalid(t *testing.T) {
 	AddHandler(testHandlerFunc, "users.Handler")
 
 	router := NewRouter()

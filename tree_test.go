@@ -74,7 +74,7 @@ func assertNodeDynamic(t *testing.T, node *node, prefix string, pattern string, 
 	}
 }
 
-func TestInsertChild(t *testing.T) {
+func TestTree_Insert_Child(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1", "/path1")
@@ -84,7 +84,7 @@ func TestInsertChild(t *testing.T) {
 	assertNodeStatic(t, tree.root.child, "/path2", true, tree.root)
 }
 
-func TestInsertDynamicChild(t *testing.T) {
+func TestTree_Insert_DynamicChild(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1/", "/path1/")
@@ -94,7 +94,7 @@ func TestInsertDynamicChild(t *testing.T) {
 	assertNodeDynamic(t, tree.root.child, "id", "", true, tree.root)
 }
 
-func TestInsertDynamicChildWithRegularExpression(t *testing.T) {
+func TestTree_Insert_DynamicChildWithRegularExpression(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1/", "/path1/")
@@ -104,7 +104,7 @@ func TestInsertDynamicChildWithRegularExpression(t *testing.T) {
 	assertNodeDynamic(t, tree.root.child, "id", "^[0-9]+$", true, tree.root)
 }
 
-func TestInsertDynamicChildHasNoHandler(t *testing.T) {
+func TestTree_Insert_DynamicChildHasNoHandler(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1/", "/path1/")
@@ -115,7 +115,7 @@ func TestInsertDynamicChildHasNoHandler(t *testing.T) {
 	assertNodeStatic(t, tree.root.child.stops['/'], "/", true, tree.root.child)
 }
 
-func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
+func TestTree_Insert_DynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1/", "/path1/")
@@ -132,7 +132,7 @@ func TestInsertDynamicChildHasNoHandlerWithSiblings(t *testing.T) {
 	assertNodeStatic(t, tree.root.child.stops['-'], "-", true, tree.root.child)
 }
 
-func TestInsertHandlerIsOnlyOnLeaf(t *testing.T) {
+func TestTree_Insert_HandlerIsOnlyOnLeaf(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1", "/path1")
@@ -147,7 +147,7 @@ func TestInsertHandlerIsOnlyOnLeaf(t *testing.T) {
 	assertNodeStatic(t, tree.root.child.child.child.sibling, "4", true, tree.root.child.child)
 }
 
-func TestInsertHandlerNotRemovePreviousHandler(t *testing.T) {
+func TestTree_Insert_HandlerNotRemovePreviousHandler(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1/{id}", "id")
@@ -163,7 +163,7 @@ func TestInsertHandlerNotRemovePreviousHandler(t *testing.T) {
 	assertNodeStatic(t, tree.root.child.stops['/'].child.child, "/path4", true, tree.root.child.stops['/'].child)
 }
 
-func TestInsertChildOnSibling(t *testing.T) {
+func TestTree_Insert_ChildOnSibling(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1", "1")
@@ -176,7 +176,7 @@ func TestInsertChildOnSibling(t *testing.T) {
 	assertNodeStatic(t, tree.root.child.sibling.child, "/path3", true, tree.root.child.sibling)
 }
 
-func TestInsertSiblingOnSibling(t *testing.T) {
+func TestTree_Insert_SiblingOnSibling(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1", "1")
@@ -189,7 +189,7 @@ func TestInsertSiblingOnSibling(t *testing.T) {
 	assertNodeStatic(t, tree.root.child.sibling.sibling, "3", true, tree.root)
 }
 
-func TestInsertPrioritisesStaticPaths(t *testing.T) {
+func TestTree_Insert_PrioritisesStaticPaths(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/{id}", "id")
@@ -205,7 +205,7 @@ func TestInsertPrioritisesStaticPaths(t *testing.T) {
 	assertNodeDynamic(t, tree.root.child.sibling.sibling, "name", "", true, tree.root)
 }
 
-func TestCreateTreeFromChunksWorks(t *testing.T) {
+func TestCreateTreeFromChunks(t *testing.T) {
 
 	chunks := []chunk{
 		{t: tChunkStatic, v: "/"},
@@ -221,7 +221,7 @@ func TestCreateTreeFromChunksWorks(t *testing.T) {
 	assertNodeStatic(t, leaf, "/abc", false, root.child)
 }
 
-func TestInsertPrioritisesStaticPathsKK(t *testing.T) {
+func TestTree_Insert_PrioritisesStaticPathsKK(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1/{id}/{name:[a-z]{1,5}}", "")

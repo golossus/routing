@@ -56,19 +56,19 @@ func assertBagParameterNotAtIndex(t *testing.T, bag URLParameterBag, index uint)
 	}
 }
 
-func TestUrlParameterBagEmptyValuesOnCreation(t *testing.T) {
+func TestURLParameterBag_EmptyValuesOnCreation(t *testing.T) {
 	bag := URLParameterBag{}
 
 	assertBagSetting(t, bag, 0, false)
 }
 
-func TestNewUrlParameterBagSetsRightValuesOnCreation(t *testing.T) {
+func TestURLParameterBag_SetsRightValuesOnCreation(t *testing.T) {
 	bag := newURLParameterBag(5, true)
 
 	assertBagSetting(t, bag, 5, true)
 }
 
-func TestUrlParameterBagAddsParameter(t *testing.T) {
+func TestURLParameterBag_Add_Works(t *testing.T) {
 	bag := URLParameterBag{}
 
 	bag.add("param1", "v1")
@@ -76,7 +76,7 @@ func TestUrlParameterBagAddsParameter(t *testing.T) {
 	assertBagParameterContains(t, bag, "param1", "v1")
 }
 
-func TestUrlParameterBagAddsMultipleParameters(t *testing.T) {
+func TestURLParameterBag_GetByName(t *testing.T) {
 	bag := URLParameterBag{}
 
 	bag.add("param1", "v1")
@@ -89,7 +89,7 @@ func TestUrlParameterBagAddsMultipleParameters(t *testing.T) {
 	assertBagParameterNotContains(t, bag, "param4")
 }
 
-func TestUrlParameterBagGetByNameInReverseMode(t *testing.T) {
+func TestURLParameterBag_GetByName_InReverseMode(t *testing.T) {
 	bag := URLParameterBag{reverse: true}
 
 	bag.add("param1", "v1")
@@ -103,7 +103,7 @@ func TestUrlParameterBagGetByNameInReverseMode(t *testing.T) {
 	assertBagParameterNotContains(t, bag, "param4")
 }
 
-func TestUrlParameterBagGetByIndex(t *testing.T) {
+func TestURLParameterBag_GetByIndex(t *testing.T) {
 	bag := URLParameterBag{}
 
 	bag.add("param1", "v1")
@@ -116,7 +116,7 @@ func TestUrlParameterBagGetByIndex(t *testing.T) {
 	assertBagParameterNotAtIndex(t, bag, 3)
 }
 
-func TestUrlParameterBagGetByIndexInReverseMode(t *testing.T) {
+func TestURLParameterBag_GetByIndex_InReverseMode(t *testing.T) {
 	bag := URLParameterBag{reverse: true}
 
 	bag.add("param3", "v3")

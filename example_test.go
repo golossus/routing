@@ -15,7 +15,7 @@ func MyHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Hello MyHandler")
 }
 
-func ExampleRegisterHandler_UsingHandlerAlias() {
+func ExampleAddHandler_UsingHandlerAlias() {
 	h, _ := routing.GetHandler("myhandler")
 
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -27,7 +27,7 @@ func ExampleRegisterHandler_UsingHandlerAlias() {
 	// Output: Hello MyHandler
 }
 
-func ExampleRegisterHandler_UsingHandlerCanonicalName() {
+func ExampleAddHandler_UsingHandlerCanonicalName() {
 	h, _ := routing.GetHandler("github.com/golossus/routing_test.MyHandler")
 
 	r, _ := http.NewRequest("GET", "/", nil)
