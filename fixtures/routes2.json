@@ -1,0 +1,10 @@
+{
+  "routes": [
+    {
+      "name": "post.users",
+      "method": "POST",
+      "schema": "/users",
+      "handler": "post.users.handler"
+    }
+  ]
+}

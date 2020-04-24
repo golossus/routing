@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
+	"runtime"
 	"strings"
 )
 
@@ -11,12 +13,35 @@ type paramsKey int
 
 var ctxKey paramsKey
 
+var handlers = make(map[string]http.HandlerFunc)
+
+// AddHandler adds an http.HandlerFunc into a list of handlers to be retrieved
+// by name (canonical or alias) on runtime
+func AddHandler(handler http.HandlerFunc, aliases ...string) {
+	name := runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name()
+	handlers[strings.TrimRight(name, "-fm")] = handler
+
+	for _, alias := range aliases {
+		handlers[alias] = handler
+	}
+}
+
+// GetHandler retrieves an http.HandlerFunc given a name from the list of handlers
+func GetHandler(name string) (http.HandlerFunc, error) {
+	handler, ok := handlers[name]
+	if !ok {
+		return nil, fmt.Errorf("handler with name %s not registered", name)
+	}
+
+	return handler, nil
+}
+
 // GetURLParameters is in charge of retrieve dynamic parameter of the URL within your route.
 // For example, User's ID in /users/{userId}
 func GetURLParameters(request *http.Request) URLParameterBag {
 	ctx := request.Context().Value(ctxKey)
 	if ctx == nil {
-		return newURLParameterBag(0, true)
+		return newURLParameterBag(0)
 	}
 
 	leaf := ctx.(*node)
@@ -28,7 +53,7 @@ func GetURLParameters(request *http.Request) URLParameterBag {
 func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) URLParameterBag {
 
 	if leaf == nil {
-		return newURLParameterBag(paramsCount, false)
+		return newURLParameterBag(paramsCount)
 	}
 
 	var paramsBag URLParameterBag
@@ -75,7 +100,7 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 }
 
 // As method sets a name for the next registered route
-func (r *Router) As(asName string)  *Router {
+func (r *Router) As(asName string) *Router {
 	r.asName = asName
 	return r
 }
@@ -226,7 +251,7 @@ func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error
 
 		if node.t == nodeTypeStatic {
 			url = node.prefix + url
-		}else{
+		} else {
 			p, err := params.GetByName(node.prefix)
 			if err != nil {
 				return p, err
@@ -240,4 +265,35 @@ func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error
 		node = node.parent
 	}
 	return url, nil
+}
+
+// RouteDef defines a route definition
+type RouteDef struct {
+	Method  string
+	Schema  string
+	Handler string
+	Name    string
+}
+
+// Loader loads a list routes
+type Loader interface {
+	Load() []RouteDef
+}
+
+// Load registers a list of routes retrieved from a loader
+func (r *Router) Load(loader Loader) error {
+	for _, route := range loader.Load() {
+		handler, err := GetHandler(route.Handler)
+		if err != nil {
+			return err
+		}
+		if route.Name != "" {
+			r.As(route.Name)
+		}
+		err = r.Register(route.Method, route.Schema, handler)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

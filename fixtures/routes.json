@@ -1,0 +1,10 @@
+{
+  "routes": [
+    {
+      "name": "get.users",
+      "method": "GET",
+      "schema": "/users",
+      "handler": "get.users.handler"
+    }
+  ]
+}

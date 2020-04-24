@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestRegexpToStringWorks(t *testing.T) {
+func TestNode_RegexpToString_Works(t *testing.T) {
 
 	node1 := node{t: nodeTypeStatic}
 	if node1.regexpToString() != "" {
@@ -24,7 +24,7 @@ func TestRegexpToStringWorks(t *testing.T) {
 
 }
 
-func TestIsCatchAllWorks(t *testing.T) {
+func TestNode_IsCatchAll_Works(t *testing.T) {
 
 	node1 := node{t: nodeTypeStatic}
 	if node1.isCatchAll() {
@@ -47,7 +47,7 @@ func TestIsCatchAllWorks(t *testing.T) {
 	}
 }
 
-func TestRegexpEqualsWorks(t *testing.T) {
+func TestNode_RegexpEquals_Works(t *testing.T) {
 
 	node1 := node{t: nodeTypeDynamic, regexp: regexp.MustCompile("[a-z]+")}
 	node2 := node{t: nodeTypeDynamic, regexp: regexp.MustCompile("[0-9]+")}

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestParserValidatesValidPaths(t *testing.T) {
+func TestParser_Parse_ValidatesValidPaths(t *testing.T) {
 	paths := []string{
 		"/",
 		"/path1",
@@ -38,7 +38,7 @@ func TestParserValidatesValidPaths(t *testing.T) {
 	}
 }
 
-func TestParserDoesNotValidateInvalidPaths(t *testing.T) {
+func TestParser_Parse_NoValidateInvalidPaths(t *testing.T) {
 	paths := []string{
 		"",
 		"//",
@@ -78,7 +78,7 @@ func TestParserDoesNotValidateInvalidPaths(t *testing.T) {
 	}
 }
 
-func TestParserReturnsErrorWhenExpressionIsInvalid(t *testing.T) {
+func TestParser_Parse_ReturnsErrorWhenExpressionIsInvalid(t *testing.T) {
 	paths := []string{
 		"/path1/{id:[0-9+}/",
 	}
@@ -93,7 +93,7 @@ func TestParserReturnsErrorWhenExpressionIsInvalid(t *testing.T) {
 	}
 }
 
-func TestParserChechChunks(t *testing.T) {
+func TestParser_Parse_CheckChunks(t *testing.T) {
 	paths := []string{
 		"/",
 		"/path1",
