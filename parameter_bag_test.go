@@ -2,17 +2,13 @@ package routing
 
 import "testing"
 
-func assertBagSetting(t *testing.T, bag URLParameterBag, cap uint, reverse bool) {
+func assertBagSetting(t *testing.T, bag URLParameterBag, cap uint) {
 	if bag.params != nil {
 		t.Errorf("parameter bag params is not nil")
 	}
 
 	if bag.capacity != cap {
 		t.Errorf("parameter bag capacity %d not equals to %d", bag.capacity, cap)
-	}
-
-	if bag.reverse != reverse {
-		t.Errorf("parameter bag reverse mode %t not equals to %t", bag.reverse, reverse)
 	}
 }
 
@@ -59,13 +55,13 @@ func assertBagParameterNotAtIndex(t *testing.T, bag URLParameterBag, index uint)
 func TestURLParameterBag_EmptyValuesOnCreation(t *testing.T) {
 	bag := URLParameterBag{}
 
-	assertBagSetting(t, bag, 0, false)
+	assertBagSetting(t, bag, 0)
 }
 
 func TestURLParameterBag_SetsRightValuesOnCreation(t *testing.T) {
-	bag := newURLParameterBag(5, true)
+	bag := newURLParameterBag(5)
 
-	assertBagSetting(t, bag, 5, true)
+	assertBagSetting(t, bag, 5)
 }
 
 func TestURLParameterBag_Add_Works(t *testing.T) {
@@ -89,39 +85,12 @@ func TestURLParameterBag_GetByName(t *testing.T) {
 	assertBagParameterNotContains(t, bag, "param4")
 }
 
-func TestURLParameterBag_GetByName_InReverseMode(t *testing.T) {
-	bag := URLParameterBag{reverse: true}
-
-	bag.add("param1", "v1")
-	bag.add("param2", "v2")
-	bag.add("param3", "v3")
-	bag.add("param1", "v4")
-
-	assertBagParameterContains(t, bag, "param1", "v4")
-	assertBagParameterContains(t, bag, "param2", "v2")
-	assertBagParameterContains(t, bag, "param3", "v3")
-	assertBagParameterNotContains(t, bag, "param4")
-}
-
 func TestURLParameterBag_GetByIndex(t *testing.T) {
 	bag := URLParameterBag{}
 
 	bag.add("param1", "v1")
 	bag.add("param2", "v2")
 	bag.add("param3", "v3")
-
-	assertBagParameterAtIndex(t, bag, 0, "v1")
-	assertBagParameterAtIndex(t, bag, 1, "v2")
-	assertBagParameterAtIndex(t, bag, 2, "v3")
-	assertBagParameterNotAtIndex(t, bag, 3)
-}
-
-func TestURLParameterBag_GetByIndex_InReverseMode(t *testing.T) {
-	bag := URLParameterBag{reverse: true}
-
-	bag.add("param3", "v3")
-	bag.add("param2", "v2")
-	bag.add("param1", "v1")
 
 	assertBagParameterAtIndex(t, bag, 0, "v1")
 	assertBagParameterAtIndex(t, bag, 1, "v2")

@@ -10,7 +10,7 @@ import (
 
 func nodePrefixHandler(prefix string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, prefix)
+		_, _ = fmt.Fprint(w, prefix)
 	}
 }
 

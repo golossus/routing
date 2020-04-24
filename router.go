@@ -13,7 +13,7 @@ type paramsKey int
 
 var ctxKey paramsKey
 
-var handlers map[string]http.HandlerFunc = make(map[string]http.HandlerFunc)
+var handlers = make(map[string]http.HandlerFunc)
 
 // AddHandler adds an http.HandlerFunc into a list of handlers to be retrieved
 // by name (canonical or alias) on runtime
@@ -41,7 +41,7 @@ func GetHandler(name string) (http.HandlerFunc, error) {
 func GetURLParameters(request *http.Request) URLParameterBag {
 	ctx := request.Context().Value(ctxKey)
 	if ctx == nil {
-		return newURLParameterBag(0, true)
+		return newURLParameterBag(0)
 	}
 
 	leaf := ctx.(*node)
@@ -53,7 +53,7 @@ func GetURLParameters(request *http.Request) URLParameterBag {
 func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) URLParameterBag {
 
 	if leaf == nil {
-		return newURLParameterBag(paramsCount, false)
+		return newURLParameterBag(paramsCount)
 	}
 
 	var paramsBag URLParameterBag

@@ -40,7 +40,7 @@ func combine(tree1 *node, tree2 *node) *node {
 				return tree1
 			}
 
-			for k, _ := range tree2.stops {
+			for k := range tree2.stops {
 				tree2.stops[k].parent = tree1
 			}
 

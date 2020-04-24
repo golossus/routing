@@ -134,29 +134,29 @@ func TestGetURLParameters(t *testing.T) {
 	mainRouter := Router{}
 	postsRouter := Router{}
 
-	bag := newURLParameterBag(2, false)
+	bag := newURLParameterBag(2)
 	bag.add("id", "100")
 	bag.add("name", "dummy")
 	f := assertRequestHasParameterHandler(t, bag)
 	_ = mainRouter.Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", f)
 
-	bag2 := newURLParameterBag(2, false)
+	bag2 := newURLParameterBag(2)
 	bag2.add("name", "dummy/file/src/image.jpg")
 	f2 := assertRequestHasParameterHandler(t, bag2)
 	_ = mainRouter.Register(http.MethodGet, "/path1/{name:.*}", f2)
 
-	bag3 := newURLParameterBag(2, false)
+	bag3 := newURLParameterBag(2)
 	bag3.add("name", "2020-05-05")
 	f3 := assertRequestHasParameterHandler(t, bag3)
 	_ = mainRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", f3)
 
-	bag4 := newURLParameterBag(2, false)
+	bag4 := newURLParameterBag(2)
 	bag4.add("id", "123")
 	bag4.add("name", "2020-05-05")
 	f4 := assertRequestHasParameterHandler(t, bag4)
 	_ = postsRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", f4)
 
-	mainRouter.Prefix("/posts/{id}", &postsRouter)
+	_ = mainRouter.Prefix("/posts/{id}", &postsRouter)
 
 	assertPathFound(t, mainRouter, "GET", "/path1/100/dummy")
 	assertPathFound(t, mainRouter, "GET", "/path1/dummy/file/src/image.jpg")
@@ -194,7 +194,7 @@ func TestGetURLParameters_ReturnsEmptyBagIfNoContextValueExists(t *testing.T) {
 
 	bag := GetURLParameters(r)
 
-	assertBagSetting(t, bag, 0, true)
+	assertBagSetting(t, bag, 0)
 }
 
 func TestRouter_ServeHTTP_FindsPathsWhenPrefixingRouters(t *testing.T) {
@@ -280,7 +280,7 @@ func TestRouter_As_AssignsRouteNames(t *testing.T) {
 	_ = apiRouter.As("users.account").Get("/users/account", testHandlerFunc)
 	_ = apiRouter.As("users.profile").Get("/users/profile", testHandlerFunc)
 
-	mainRouter.As("api.").Prefix("/api", &apiRouter)
+	_ = mainRouter.As("api.").Prefix("/api", &apiRouter)
 
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/users", "users.get")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodPost, "/users/create", "users.create")
