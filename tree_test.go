@@ -221,7 +221,7 @@ func TestCreateTreeFromChunks(t *testing.T) {
 	assertNodeStatic(t, leaf, "/abc", false, root.child)
 }
 
-func TestTree_Insert_PrioritisesStaticPathsKK(t *testing.T) {
+func TestTree_Insert_PrioritisesStaticPathsWithComplexPaths(t *testing.T) {
 	tree := &tree{}
 
 	parseAndInsertSchema(tree, "/path1/{id}/{name:[a-z]{1,5}}", "")
@@ -235,4 +235,41 @@ func TestTree_Insert_PrioritisesStaticPathsKK(t *testing.T) {
 	assertNodeStatic(t, tree.root.child.child.sibling, "osts/", false, tree.root.child)
 	assertNodeDynamic(t, tree.root.child.sibling, "date", "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", true, tree.root)
 	assertNodeDynamic(t, tree.root.child.child.sibling.child, "id", "", false, tree.root.child.child.sibling)
+}
+
+func TestTree_OptimizeByWeight_PrioritisesHeavierPathsAllStatic(t *testing.T) {
+	tree := &tree{}
+
+	parseAndInsertSchema(tree, "/data", "data")
+	parseAndInsertSchema(tree, "/path1", "1")
+	parseAndInsertSchema(tree, "/path2", "2")
+	parseAndInsertSchema(tree, "/path2/id", "/id")
+	parseAndInsertSchema(tree, "/path3", "3")
+	parseAndInsertSchema(tree, "/path3/name", "name")
+	parseAndInsertSchema(tree, "/path3/phone", "phone")
+
+	assertNodeStatic(t, tree.root, "/", false, nil)
+	assertNodeStatic(t, tree.root.child, "data", true, tree.root)
+	assertNodeStatic(t, tree.root.child.sibling, "path", false, tree.root)
+	assertNodeStatic(t, tree.root.child.sibling.child, "1", true, tree.root.child.sibling)
+	assertNodeStatic(t, tree.root.child.sibling.child.sibling, "2", true, tree.root.child.sibling)
+	assertNodeStatic(t, tree.root.child.sibling.child.sibling.child, "/id", true, tree.root.child.sibling.child.sibling)
+	assertNodeStatic(t, tree.root.child.sibling.child.sibling.sibling, "3", true, tree.root.child.sibling)
+	assertNodeStatic(t, tree.root.child.sibling.child.sibling.sibling.child, "/", false, tree.root.child.sibling.child.sibling.sibling)
+	assertNodeStatic(t, tree.root.child.sibling.child.sibling.sibling.child.child, "name", true, tree.root.child.sibling.child.sibling.sibling.child)
+	assertNodeStatic(t, tree.root.child.sibling.child.sibling.sibling.child.child.sibling, "phone", true, tree.root.child.sibling.child.sibling.sibling.child)
+
+	_ = calcWeight(tree.root)
+	tree.root = sortByWeight(tree.root)
+
+	assertNodeStatic(t, tree.root, "/", false, nil)
+	assertNodeStatic(t, tree.root.child, "path", false, tree.root)
+	assertNodeStatic(t, tree.root.child.sibling, "data", true, tree.root)
+	assertNodeStatic(t, tree.root.child.child, "3", true, tree.root.child)
+	assertNodeStatic(t, tree.root.child.child.sibling, "2", true, tree.root.child)
+	assertNodeStatic(t, tree.root.child.child.sibling.child, "/id", true, tree.root.child.child.sibling)
+	assertNodeStatic(t, tree.root.child.child.sibling.sibling, "1", true, tree.root.child)
+	assertNodeStatic(t, tree.root.child.child.child, "/", false, tree.root.child.child)
+	assertNodeStatic(t, tree.root.child.child.child.child, "name", true, tree.root.child.child.child)
+	assertNodeStatic(t, tree.root.child.child.child.child.sibling, "phone", true, tree.root.child.child.child)
 }

@@ -300,3 +300,11 @@ func (r *Router) Load(loader Loader) error {
 	}
 	return nil
 }
+
+// Load registers a list of routes retrieved from a loader
+func (r *Router) PrioritizeByWeight() {
+	for _, tree := range r.trees {
+		_ = calcWeight(tree.root)
+		tree.root = sortByWeight(tree.root)
+	}
+}

@@ -18,6 +18,7 @@ type node struct {
 	t       int
 	stops   map[byte]*node
 	regexp  *regexp.Regexp
+	w       int
 }
 
 func (n *node) isCatchAll() bool {
