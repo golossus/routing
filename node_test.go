@@ -61,3 +61,20 @@ func TestNode_RegexpEquals_Works(t *testing.T) {
 		t.Errorf("node2 is not equal to node 3")
 	}
 }
+
+func TestNode_HasParameters_Works(t *testing.T) {
+
+	node1 := node{t: nodeTypeStatic}
+	node2 := node{t: nodeTypeDynamic, parent: &node1, regexp: regexp.MustCompile("[0-9]+")}
+	node3 := node{t: nodeTypeStatic, parent: &node2}
+
+	if node1.hasParameters() != false {
+		t.Errorf("node1 has parameters")
+	}
+	if node2.hasParameters() != true {
+		t.Errorf("node2 has no parameters")
+	}
+	if node3.hasParameters() != true {
+		t.Errorf("node3 has no parameters")
+	}
+}

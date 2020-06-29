@@ -102,7 +102,6 @@ func combine(tree1 *node, tree2 *node) *node {
 		tree2.child = combine(tree1, tree2.child)
 		return tree2
 	}
-
 	if pos != len(tree1.prefix) && pos != len(tree2.prefix) {
 		split := createNodeFromChunk(chunk{t: tChunkStatic, v: tree1.prefix[:pos]})
 		split.parent = tree1.parent
@@ -246,4 +245,86 @@ func common(s1, s2 string) int {
 	}
 
 	return len(s1)
+}
+
+func calcWeight(n *node) int {
+	if n == nil {
+		return 0
+	}
+
+	n.w = 0
+	if n.handler != nil {
+		n.w++
+	}
+
+	if n.t == nodeTypeStatic {
+		n.w = n.w + calcWeight(n.child) + calcSiblingsWeight(n.child)
+	} else {
+		for _, c := range n.stops {
+			n.w = n.w + calcWeight(c) + calcSiblingsWeight(c)
+		}
+	}
+
+	return n.w
+}
+
+func calcSiblingsWeight(n *node) int {
+	if n == nil {
+		return 0
+	}
+
+	w := 0
+	s := n.sibling
+	for s != nil {
+		if s.t == nodeTypeStatic {
+			w = w + calcWeight(s)
+		} else {
+			for _, c := range s.stops {
+				w = w + calcWeight(c)
+			}
+		}
+
+		s = s.sibling
+	}
+
+	return w
+}
+
+func sortByWeight(head *node) *node {
+	var sorted *node
+
+	current := head
+	for current != nil {
+		next := current.sibling
+
+		if current.t == nodeTypeStatic {
+			current.child = sortByWeight(current.child)
+		} else {
+			for k, s := range current.stops {
+				current.stops[k] = sortByWeight(s)
+			}
+		}
+		sorted = sortInsertByWeight(sorted, current)
+
+		current = next
+	}
+
+	return sorted
+}
+
+func sortInsertByWeight(head *node, in *node) *node {
+	var current *node
+	if head == nil || head.w < in.w {
+		in.sibling = head
+		head = in
+	} else {
+		current = head
+		for current.sibling != nil && current.sibling.w >= in.w {
+			current = current.sibling
+		}
+		in.sibling = current.sibling
+		current.sibling = in
+	}
+
+	return head
 }

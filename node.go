@@ -18,6 +18,7 @@ type node struct {
 	t       int
 	stops   map[byte]*node
 	regexp  *regexp.Regexp
+	w       int
 }
 
 func (n *node) isCatchAll() bool {
@@ -37,4 +38,16 @@ func (n *node) regexpToString() string {
 		return ""
 	}
 	return n.regexp.String()
+}
+
+func (n *node) hasParameters() bool {
+	parent := n
+	for parent != nil {
+		if parent.t == nodeTypeDynamic {
+			return true
+		}
+		parent = parent.parent
+	}
+
+	return false
 }

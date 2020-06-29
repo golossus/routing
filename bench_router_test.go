@@ -167,18 +167,24 @@ var testRoutes = []string{
 	"/progs/update.bash",
 }
 
-func BenchmarkTreeRouter(b *testing.B) {
-	router := Router{}
-	benchRouter(&router, b)
+func BenchmarkRouter(b *testing.B) {
+	benchRouter(b, false)
+}
+func BenchmarkRouter_SortedByWeight(b *testing.B) {
+	benchRouter(b, true)
 }
 
-func benchRouter(router *Router, b *testing.B) {
+func benchRouter(b *testing.B, prioritizeByWeight bool) {
+	router := Router{}
 	m := new(runtime.MemStats)
 	runtime.ReadMemStats(m)
 	before := m.HeapAlloc
 	handler := func(response http.ResponseWriter, request *http.Request) {}
 	for _, routes := range testRoutes {
 		router.Register(http.MethodGet, routes, handler)
+	}
+	if prioritizeByWeight {
+		router.PrioritizeByWeight()
 	}
 	runtime.ReadMemStats(m)
 	after := m.HeapAlloc
