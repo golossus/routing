@@ -249,25 +249,40 @@ func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error
 		return "", fmt.Errorf("route name %s not found", name)
 	}
 
-	url := ""
-	for node != nil {
-
-		if node.t == nodeTypeStatic {
-			url = node.prefix + url
-		} else {
-			p, err := params.GetByName(node.prefix)
-			if err != nil {
-				return p, err
-			}
-			if node.regexp != nil && !node.regexp.MatchString(p) {
-				return "", fmt.Errorf("param %s with value %s is not valid", node.prefix, p)
-			}
-			url = p + url
-		}
-
-		node = node.parent
+	var url strings.Builder
+	err := getUri(node, &url, params)
+	if err != nil {
+		return "", err
 	}
-	return url, nil
+
+	return url.String(), nil
+}
+
+func getUri(node *node, url *strings.Builder, params URLParameterBag) error {
+
+	if node == nil{
+		return nil
+	}
+
+	err := getUri(node.parent, url, params)
+	if err != nil{
+		return err
+	}
+
+	if node.t == nodeTypeStatic {
+		url.WriteString(node.prefix)
+	} else {
+		p, err := params.GetByName(node.prefix)
+		if err != nil {
+			return err
+		}
+		if node.regexp != nil && !node.regexp.MatchString(p) {
+			return fmt.Errorf("param %s with value %s is not valid", node.prefix, p)
+		}
+		url.WriteString(p)
+	}
+
+	return nil
 }
 
 // RouteDef defines a route definition

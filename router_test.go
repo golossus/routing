@@ -312,6 +312,7 @@ func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	assertRouteIsGenerated(t, mainRouter, "posts.id.date", "/posts/10/2020-05-05", map[string]string{"id": "10", "date": "2020-05-05"})
 }
 
+
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
 	bag := URLParameterBag{}
 	for key, value := range params {
