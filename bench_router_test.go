@@ -174,6 +174,27 @@ func BenchmarkRouter_SortedByWeight(b *testing.B) {
 	benchRouter(b, true)
 }
 
+func BenchmarkRouter_GenerateURL(b *testing.B) {
+	mainRouter := Router{}
+
+	_ = mainRouter.Register(http.MethodGet, "/path1", testHandlerFunc)
+	_ = mainRouter.As("path1.id.name").Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/path1/{file:.*}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
+
+	postsRouter := Router{}
+	_ = postsRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
+
+	_ = mainRouter.Prefix("/posts/{id}", &postsRouter)
+
+	paramsKey := newURLParameterBag(2)
+	paramsKey.add("id", "2")
+	paramsKey.add("name", "john")
+	for i := 0; i < b.N; i++ {
+		mainRouter.GenerateURL("path1.id.name", paramsKey)
+	}
+}
+
 func benchRouter(b *testing.B, prioritizeByWeight bool) {
 	router := Router{}
 	m := new(runtime.MemStats)
