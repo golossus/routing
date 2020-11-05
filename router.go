@@ -44,13 +44,13 @@ func GetURLParameters(request *http.Request) URLParameterBag {
 		return newURLParameterBag(0)
 	}
 
-	leaf := ctx.(*node)
+	leaf := ctx.(nodeInterface)
 
 	path := request.URL.Path
 	return buildURLParameters(leaf, path, len(path), 0)
 }
 
-func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) URLParameterBag {
+func buildURLParameters(leaf nodeInterface, path string, offset int, paramsCount uint) URLParameterBag {
 
 	if leaf == nil {
 		return newURLParameterBag(paramsCount)
@@ -58,12 +58,13 @@ func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) U
 
 	var paramsBag URLParameterBag
 
-	if leaf.t == nodeTypeDynamic {
-		start := strings.LastIndex(path[:offset], leaf.parent.prefix) + len(leaf.parent.prefix)
-		paramsBag = buildURLParameters(leaf.parent, path, start, paramsCount+1)
-		paramsBag.add(leaf.prefix, path[start:offset])
-	} else {
-		paramsBag = buildURLParameters(leaf.parent, path, offset-len(leaf.prefix), paramsCount)
+	switch leaf.(type) {
+	case *nodeDynamic:
+		start := strings.LastIndex(path[:offset], leaf.getParent().getPrefix()) + len(leaf.getParent().getPrefix())
+		paramsBag = buildURLParameters(leaf.getParent(), path, start, paramsCount+1)
+		paramsBag.add(leaf.getPrefix(), path[start:offset])
+	case *nodeStatic:
+		paramsBag = buildURLParameters(leaf.getParent(), path, offset-len(leaf.getPrefix()), paramsCount)
 	}
 
 	return paramsBag
@@ -73,7 +74,7 @@ func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) U
 type Router struct {
 	trees  map[string]*tree
 	asName string
-	routes map[string]*node
+	routes map[string]nodeInterface
 }
 
 // NewRouter returns an empty Router
@@ -99,7 +100,7 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 		ctx := context.Background()
 		request = request.WithContext(context.WithValue(ctx, ctxKey, leaf))
 	}
-	leaf.handler(response, request)
+	leaf.handler()(response, request)
 }
 
 // As method sets a name for the next registered route
@@ -188,7 +189,7 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
 	}
 
 	if nil == r.routes {
-		r.routes = make(map[string]*node)
+		r.routes = make(map[string]nodeInterface)
 	}
 
 	if _, ok := r.trees[verb]; !ok {
@@ -223,15 +224,20 @@ func (r *Router) Prefix(path string, router *Router) error {
 		}
 
 		rootNew, leafNew := createTreeFromChunks(parser.chunks)
-		t.root.parent = leafNew
+		t.root.setParent(leafNew)
 
-		if leafNew.t == nodeTypeDynamic {
-			leafNew.stops[t.root.prefix[0]] = t.root
-		} else {
-			leafNew.child = t.root
+		switch leafNew.(type) {
+		case *nodeDynamic:
+			leafNew.(*nodeDynamic).childrenNodes[t.root.getPrefix()[0]] = t.root
+		case *nodeStatic:
+			leafNew.(*nodeStatic).childNode = t.root
 		}
 
-		r.trees[verb].root = combine(r.trees[verb].root, rootNew)
+		if r.trees[verb].root == nil {
+			r.trees[verb].root = rootNew
+		}else{
+			r.trees[verb].root = r.trees[verb].root.combine(rootNew)
+		}
 	}
 
 	for name, leaf := range router.routes {
@@ -258,26 +264,27 @@ func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error
 	return url.String(), nil
 }
 
-func getUri(node *node, url *strings.Builder, params URLParameterBag) error {
+func getUri(node nodeInterface, url *strings.Builder, params URLParameterBag) error {
 
 	if node == nil{
 		return nil
 	}
 
-	err := getUri(node.parent, url, params)
+	err := getUri(node.getParent(), url, params)
 	if err != nil{
 		return err
 	}
 
-	if node.t == nodeTypeStatic {
-		url.WriteString(node.prefix)
-	} else {
-		p, err := params.GetByName(node.prefix)
+	switch node.(type) {
+	case *nodeStatic:
+		url.WriteString(node.getPrefix())
+	case *nodeDynamic:
+		p, err := params.GetByName(node.getPrefix())
 		if err != nil {
 			return err
 		}
-		if node.regexp != nil && !node.regexp.MatchString(p) {
-			return fmt.Errorf("param %s with value %s is not valid", node.prefix, p)
+		if node.(*nodeDynamic).regexp != nil && !node.(*nodeDynamic).regexp.MatchString(p) {
+			return fmt.Errorf("param %s with value %s is not valid", node.getPrefix(), p)
 		}
 		url.WriteString(p)
 	}

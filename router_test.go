@@ -65,7 +65,7 @@ func assertRouteNameHasHandler(t *testing.T, mainRouter Router, method, path, ro
 
 	r, _ := http.NewRequest(method, path, nil)
 	w := httptest.NewRecorder()
-	leaf.handler(w, r)
+	leaf.handler()(w, r)
 
 	if w.Result().StatusCode != 200 || w.Body.String() != path {
 		t.Errorf("%s %s not found as %s route name", method, path, routeName)
@@ -101,6 +101,8 @@ func TestRouter_ServeHTTP_FindsPaths(t *testing.T) {
 	_ = router.Register(http.MethodGet, "/path4/{id:[0-9]+}", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/path4/{id:[0-9]+}/{slug:[a-z]+}", testHandlerFunc)
 
+	assertPathFound(t, router, "GET", "/user/starred")
+	assertPathFound(t, router, "GET", "/users/{user}/starred")
 	assertPathFound(t, router, "GET", "/path1")
 	assertPathFound(t, router, "GET", "/path2")
 	assertPathFound(t, router, "GET", "/1/classes/{className}/{objectId}")
@@ -109,8 +111,6 @@ func TestRouter_ServeHTTP_FindsPaths(t *testing.T) {
 	assertPathFound(t, router, "POST", "/1/classes/{className}")
 	assertPathFound(t, router, "GET", "/activities/{activityId}/people/{collection}")
 	assertPathFound(t, router, "GET", "/activities/{activityId}/comments")
-	assertPathFound(t, router, "GET", "/users/{user}/starred")
-	assertPathFound(t, router, "GET", "/user/starred")
 	assertPathFound(t, router, "GET", "/users")
 	assertPathFound(t, router, "GET", "/path1/{id}")
 	assertPathFound(t, router, "POST", "/path1")
@@ -311,7 +311,6 @@ func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	assertRouteIsGenerated(t, mainRouter, "date", "/2020-05-05", map[string]string{"date": "2020-05-05"})
 	assertRouteIsGenerated(t, mainRouter, "posts.id.date", "/posts/10/2020-05-05", map[string]string{"id": "10", "date": "2020-05-05"})
 }
-
 
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
 	bag := URLParameterBag{}

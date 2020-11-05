@@ -4,25 +4,27 @@ import (
 	"net/http"
 )
 
-const (
-	nodeTypeStatic = iota
-	nodeTypeDynamic
-)
-
 type tree struct {
-	root *node
+	root nodeInterface
 }
 
-func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) *node {
+func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) nodeInterface {
 	root2, leaf2 := createTreeFromChunks(chunks)
-	leaf2.handler = handler
+	leaf2.setHandler(handler)
 
-	t.root = combine(t.root, root2)
+	if t.root != nil {
+		t.root = t.root.combine(root2)
+	} else {
+		t.root = root2
+	}
 
 	return leaf2
 }
 
-func combine(tree1 *node, tree2 *node) *node {
+/*
+func combine(tree1 nodeInterface, tree2 nodeInterface) nodeInterface {
+
+	return tree1.combine(tree2)
 
 	if tree1 == nil {
 		return tree2
@@ -127,8 +129,8 @@ func combine(tree1 *node, tree2 *node) *node {
 	tree1.child.parent = tree1
 	return tree1
 }
-
-func createTreeFromChunks(chunks []chunk) (root, leaf *node) {
+*/
+func createTreeFromChunks(chunks []chunk) (root, leaf nodeInterface) {
 
 	if len(chunks) < 1 {
 		return nil, nil
@@ -139,34 +141,50 @@ func createTreeFromChunks(chunks []chunk) (root, leaf *node) {
 
 	for i := 1; i < len(chunks); i++ {
 		newNode := createNodeFromChunk(chunks[i])
-		if n.t == nodeTypeDynamic {
-			n.stops[newNode.prefix[0]] = newNode
-		} else {
-			n.child = newNode
+		switch n.(type) {
+		case *nodeDynamic:
+			n.(*nodeDynamic).childrenNodes[newNode.getPrefix()[0]] = newNode
+		case *nodeStatic:
+			n.(*nodeStatic).childNode = newNode
 		}
-		newNode.parent = n
+		newNode.setParent(n)
 		n = newNode
 	}
 
 	return root, n
 }
 
-func createNodeFromChunk(c chunk) *node {
-	var n *node
+func createNodeFromChunk(c chunk) nodeInterface {
+	var n nodeInterface
 	if c.t == tChunkStatic {
-		n = &node{prefix: c.v, handler: nil, t: nodeTypeStatic}
+		n = &nodeStatic{
+			prefix:      c.v,
+			handlerFunc: nil,
+			childNode:   nil,
+			parentNode:  nil,
+			siblingNode: nil,
+			weight:      0,
+		}
 	} else {
-		stops := make(map[byte]*node)
-
-		n = &node{prefix: c.v, t: nodeTypeDynamic, handler: nil, stops: stops, regexp: c.exp}
+		stops := make(map[byte]nodeInterface)
+		n = &nodeDynamic{
+			prefix:        c.v,
+			handlerFunc:   nil,
+			parentNode:    nil,
+			siblingNode:   nil,
+			childrenNodes: stops,
+			regexp:        c.exp,
+			weight:        0,
+		}
 	}
 	return n
 }
 
-func (t *tree) find(path string) *node {
-	return find(t.root, path)
+func (t *tree) find(path string) nodeInterface {
+	return t.root.find(path)
 }
 
+/*
 func find(n *node, p string) *node {
 	if nil == n || len(p) == 0 {
 		return nil
@@ -236,74 +254,75 @@ func find(n *node, p string) *node {
 
 	return nil
 }
+*/
 
-func common(s1, s2 string) int {
-	for k := 0; k < len(s1); k++ {
-		if k == len(s2) || s1[k] != s2[k] {
-			return k
-		}
-	}
-
-	return len(s1)
-}
-
-func calcWeight(n *node) int {
+func calcWeight(n nodeInterface) int {
 	if n == nil {
 		return 0
 	}
 
-	n.w = 0
-	if n.handler != nil {
-		n.w++
-	}
-
-	if n.t == nodeTypeStatic {
-		n.w = n.w + calcWeight(n.child) + calcSiblingsWeight(n.child)
-	} else {
-		for _, c := range n.stops {
-			n.w = n.w + calcWeight(c) + calcSiblingsWeight(c)
+	switch n.(type) {
+	case *nodeStatic:
+		n.(*nodeStatic).weight = 0
+		if n.handler() != nil {
+			n.(*nodeStatic).weight++
 		}
+		n.(*nodeStatic).weight = n.(*nodeStatic).weight + calcWeight(n.child()) + calcSiblingsWeight(n.child())
+		return n.(*nodeStatic).weight
+
+	case *nodeDynamic:
+		n.(*nodeDynamic).weight = 0
+		if n.handler() != nil {
+			n.(*nodeDynamic).weight++
+		}
+		for _, c := range n.(*nodeDynamic).childrenNodes {
+			n.(*nodeDynamic).weight = n.(*nodeDynamic).weight + calcWeight(c) + calcSiblingsWeight(c)
+		}
+		return n.(*nodeDynamic).weight
 	}
 
-	return n.w
+	return 0
 }
 
-func calcSiblingsWeight(n *node) int {
+func calcSiblingsWeight(n nodeInterface) int {
 	if n == nil {
 		return 0
 	}
 
 	w := 0
-	s := n.sibling
+	s := n.sibling()
 	for s != nil {
-		if s.t == nodeTypeStatic {
+		switch n.(type) {
+		case *nodeStatic:
 			w = w + calcWeight(s)
-		} else {
-			for _, c := range s.stops {
+		case *nodeDynamic:
+			for _, c := range s.(*nodeDynamic).childrenNodes {
 				w = w + calcWeight(c)
 			}
 		}
 
-		s = s.sibling
+		s = s.sibling()
 	}
 
 	return w
 }
 
-func sortByWeight(head *node) *node {
-	var sorted *node
+func sortByWeight(head nodeInterface) nodeInterface {
+	var sorted nodeInterface
 
 	current := head
 	for current != nil {
-		next := current.sibling
+		next := current.sibling()
 
-		if current.t == nodeTypeStatic {
-			current.child = sortByWeight(current.child)
-		} else {
-			for k, s := range current.stops {
-				current.stops[k] = sortByWeight(s)
+		switch current.(type) {
+		case *nodeStatic:
+			current.(*nodeStatic).childNode = sortByWeight(current.child())
+		case *nodeDynamic:
+			for k, s := range current.(*nodeDynamic).childrenNodes {
+				current.(*nodeDynamic).childrenNodes[k] = sortByWeight(s)
 			}
 		}
+
 		sorted = sortInsertByWeight(sorted, current)
 
 		current = next
@@ -312,18 +331,19 @@ func sortByWeight(head *node) *node {
 	return sorted
 }
 
-func sortInsertByWeight(head *node, in *node) *node {
-	var current *node
-	if head == nil || head.w < in.w {
-		in.sibling = head
+func sortInsertByWeight(head nodeInterface, in nodeInterface) nodeInterface {
+	var current nodeInterface
+
+	if head == nil || head.getWeight() < in.getWeight() {
+		in.setSibling(head)
 		head = in
 	} else {
 		current = head
-		for current.sibling != nil && current.sibling.w >= in.w {
-			current = current.sibling
+		for current.sibling() != nil && current.sibling().getWeight() >= in.getWeight() {
+			current = current.sibling()
 		}
-		in.sibling = current.sibling
-		current.sibling = in
+		in.setSibling(current.sibling())
+		current.setSibling(in)
 	}
 
 	return head
