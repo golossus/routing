@@ -112,7 +112,8 @@ func (ns *nodeStatic) merge(ni nodeInterface) nodeInterface {
 
 	if pos == len(ns.prefix) && pos != len(n.prefix) {
 		n.prefix = n.prefix[pos:]
-		return ns.addChild(n)
+		ns.addChild(n)
+		return ns
 	}
 
 	if pos != len(ns.prefix) && pos == len(n.prefix) {
@@ -151,7 +152,8 @@ func (ns *nodeStatic) merge(ni nodeInterface) nodeInterface {
 		ns.handlerFunc = n.handlerFunc
 	}
 
-	return ns.addChild(n.childNode)
+	ns.addChild(n.childNode)
+	return ns
 }
 
 func (ns *nodeStatic) addSibling(s nodeInterface) nodeInterface {
@@ -170,20 +172,20 @@ func (ns *nodeStatic) addSibling(s nodeInterface) nodeInterface {
 	return ns
 }
 
-func (ns *nodeStatic) addChild(c nodeInterface) nodeInterface {
+func (ns *nodeStatic) addChild(c nodeInterface) (r, l nodeInterface) {
 	if c == nil {
-		return ns
+		return ns, ns
 	}
 
 	if ns.childNode != nil {
 		ns.childNode = ns.childNode.merge(c)
-		return ns
+		return ns, ns.childNode
 	}
 
 	c.setParent(ns)
 	ns.childNode = c
 
-	return ns
+	return ns, c
 }
 
 func (ns *nodeStatic) common(p string) int {

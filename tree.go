@@ -27,22 +27,18 @@ func createTreeFromChunks(chunks []chunk) (root, leaf nodeInterface) {
 		return nil, nil
 	}
 
-	root = createNodeFromChunk(chunks[0])
-	n := root
-
-	for i := 1; i < len(chunks); i++ {
-		newNode := createNodeFromChunk(chunks[i])
-		switch n.(type) {
-		case *nodeDynamic:
-			n.(*nodeDynamic).childrenNodes[newNode.getPrefix()[0]] = newNode
-		case *nodeStatic:
-			n.(*nodeStatic).childNode = newNode
+	for i := 0; i < len(chunks); i++ {
+		if i == 0 {
+			root = createNodeFromChunk(chunks[i])
+			leaf = root
+			continue
 		}
-		newNode.setParent(n)
-		n = newNode
+
+		_, leaf = leaf.addChild(createNodeFromChunk(chunks[i]))
 	}
 
-	return root, n
+	return root, leaf
+
 }
 
 func createNodeFromChunk(c chunk) nodeInterface {

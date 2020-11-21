@@ -138,21 +138,21 @@ func (nd *nodeDynamic) addSibling(s nodeInterface) nodeInterface {
 	return nd
 }
 
-func (nd *nodeDynamic) addChild(child nodeInterface) nodeInterface {
+func (nd *nodeDynamic) addChild(child nodeInterface) (r, l nodeInterface) {
 	if child == nil {
-		return nd
+		return nd,nd
 	}
 
 	k := child.getPrefix()[0]
 	if nk, ok := nd.childrenNodes[k]; ok {
 		nd.childrenNodes[k] = nk.merge(child)
-		return nd
+		return nd, nd.childrenNodes[k]
 	}
 
 	child.setParent(nd)
 	nd.childrenNodes[k] = child
 
-	return nd
+	return nd, child
 }
 
 func (nd *nodeDynamic) equals(o *nodeDynamic) bool {

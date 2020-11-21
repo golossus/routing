@@ -9,6 +9,7 @@ type nodeInterface interface {
 	merge(n nodeInterface) nodeInterface
 	hasParameters() bool
 	setParent(parent nodeInterface)
+	addChild(child nodeInterface) (nodeInterface, nodeInterface)
 	sibling() nodeInterface
 	setSibling(sibling nodeInterface)
 	child() nodeInterface
