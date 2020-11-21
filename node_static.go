@@ -81,7 +81,7 @@ func (ns *nodeStatic) find(p string) nodeInterface {
 
 	if ns.childNode != nil {
 		n := ns.childNode.find(p[pos:])
-		if nil != n  {
+		if nil != n {
 			return n
 		}
 	}
@@ -93,7 +93,7 @@ func (ns *nodeStatic) find(p string) nodeInterface {
 	return nil
 }
 
-func (ns *nodeStatic) combine(ni nodeInterface) nodeInterface {
+func (ns *nodeStatic) merge(ni nodeInterface) nodeInterface {
 
 	if ni == nil {
 		return ns
@@ -101,38 +101,18 @@ func (ns *nodeStatic) combine(ni nodeInterface) nodeInterface {
 
 	n, ok := ni.(*nodeStatic)
 	if !ok {
-		if ns.siblingNode != nil {
-			ns.siblingNode.combine(ni)
-			return ns
-		}
-
-		ns.siblingNode = ni
-		ns.siblingNode.setParent(ns.parentNode)
-		return ns
+		return ns.addSibling(ni)
 	}
 
 	pos := ns.common(n.prefix)
 
 	if pos == 0 {
-		if ns.siblingNode != nil {
-			ns.siblingNode = ns.siblingNode.combine(n)
-			return ns
-		}
-		n.parentNode = ns.parentNode
-		ns.siblingNode = n
-		return ns
+		return ns.addSibling(n)
 	}
 
 	if pos == len(ns.prefix) && pos != len(n.prefix) {
 		n.prefix = n.prefix[pos:]
-		n.parentNode = ns
-
-		if ns.childNode != nil {
-			ns.childNode = ns.childNode.combine(n)
-			return ns
-		}
-		ns.childNode = n
-		return ns
+		return ns.addChild(n)
 	}
 
 	if pos != len(ns.prefix) && pos == len(n.prefix) {
@@ -140,7 +120,7 @@ func (ns *nodeStatic) combine(ni nodeInterface) nodeInterface {
 		n.siblingNode = ns.siblingNode
 		ns.siblingNode = nil
 		ns.parentNode = n
-		n.childNode = ns.combine(n.childNode)
+		n.childNode = ns.merge(n.childNode)
 
 		return n
 	}
@@ -162,7 +142,7 @@ func (ns *nodeStatic) combine(ni nodeInterface) nodeInterface {
 		n.prefix = n.prefix[pos:]
 		n.parentNode = split
 
-		split.childNode = ns.combine(n)
+		split.childNode = ns.merge(n)
 
 		return split
 	}
@@ -171,13 +151,38 @@ func (ns *nodeStatic) combine(ni nodeInterface) nodeInterface {
 		ns.handlerFunc = n.handlerFunc
 	}
 
-	if ns.childNode != nil {
-		ns.childNode.combine(n.childNode)
-		ns.childNode.setParent(ns)
+	return ns.addChild(n.childNode)
+}
+
+func (ns *nodeStatic) addSibling(s nodeInterface) nodeInterface {
+	if s == nil {
 		return ns
 	}
 
-	ns.childNode = n.childNode
+	if ns.siblingNode == nil {
+		s.setParent(ns.parentNode)
+		ns.siblingNode = s
+		return ns
+	}
+
+	ns.siblingNode = ns.siblingNode.merge(s)
+
+	return ns
+}
+
+func (ns *nodeStatic) addChild(c nodeInterface) nodeInterface {
+	if c == nil {
+		return ns
+	}
+
+	if ns.childNode != nil {
+		ns.childNode = ns.childNode.merge(c)
+		return ns
+	}
+
+	c.setParent(ns)
+	ns.childNode = c
+
 	return ns
 }
 

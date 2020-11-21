@@ -97,23 +97,21 @@ func (nd *nodeDynamic) find(p string) nodeInterface {
 	return nd.siblingNode.find(p)
 }
 
-func (nd *nodeDynamic) combine(ni nodeInterface) nodeInterface {
+func (nd *nodeDynamic) merge(ni nodeInterface) nodeInterface {
 	if ni == nil {
 		return nd
 	}
 
 	n, ok := ni.(*nodeDynamic)
 	if !ok {
-		return ni.combine(nd)
+		return ni.merge(nd)
 	}
 
 	if nd.equals(n) {
-		for k, next1 := range nd.childrenNodes {
-			next2, _ := n.childrenNodes[k]
-			n.childrenNodes[k] = next1.combine(next2)
+		for _, child := range n.childrenNodes {
+			nd.addChild(child)
 		}
 
-		nd.childrenNodes = n.childrenNodes
 		if n.handlerFunc != nil {
 			nd.handlerFunc = n.handlerFunc
 		}
@@ -121,13 +119,38 @@ func (nd *nodeDynamic) combine(ni nodeInterface) nodeInterface {
 		return nd
 	}
 
-	if nd.siblingNode == nil {
-		n.parentNode = nd.parentNode
-		nd.siblingNode = n
+	return nd.addSibling(n)
+}
+
+func (nd *nodeDynamic) addSibling(s nodeInterface) nodeInterface {
+	if s == nil {
 		return nd
 	}
 
-	nd.siblingNode = nd.siblingNode.combine(n)
+	if nd.siblingNode == nil {
+		s.setParent(nd.parentNode)
+		nd.siblingNode = s
+		return nd
+	}
+
+	nd.siblingNode = nd.siblingNode.merge(s)
+
+	return nd
+}
+
+func (nd *nodeDynamic) addChild(child nodeInterface) nodeInterface {
+	if child == nil {
+		return nd
+	}
+
+	k := child.getPrefix()[0]
+	if nk, ok := nd.childrenNodes[k]; ok {
+		nd.childrenNodes[k] = nk.merge(child)
+		return nd
+	}
+
+	child.setParent(nd)
+	nd.childrenNodes[k] = child
 
 	return nd
 }

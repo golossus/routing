@@ -6,7 +6,7 @@ import (
 
 type nodeInterface interface {
 	find(p string) nodeInterface
-	combine(n nodeInterface) nodeInterface
+	merge(n nodeInterface) nodeInterface
 	hasParameters() bool
 	setParent(parent nodeInterface)
 	sibling() nodeInterface

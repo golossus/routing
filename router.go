@@ -236,7 +236,7 @@ func (r *Router) Prefix(path string, router *Router) error {
 		if r.trees[verb].root == nil {
 			r.trees[verb].root = rootNew
 		}else{
-			r.trees[verb].root = r.trees[verb].root.combine(rootNew)
+			r.trees[verb].root = r.trees[verb].root.merge(rootNew)
 		}
 	}
 

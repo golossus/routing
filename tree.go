@@ -13,7 +13,7 @@ func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) nodeInterface {
 	leaf2.setHandler(handler)
 
 	if t.root != nil {
-		t.root = t.root.combine(root2)
+		t.root = t.root.merge(root2)
 	} else {
 		t.root = root2
 	}
