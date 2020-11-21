@@ -27,22 +27,22 @@ func TestNode_RegexpToString_Works(t *testing.T) {
 func TestNode_IsCatchAll_Works(t *testing.T) {
 
 	node1 := node{t: nodeTypeStatic}
-	if node1.isCatchAll() {
+	if node1.catchesAll() {
 		t.Errorf("node Type static is catch all")
 	}
 
 	node2 := node{t: nodeTypeDynamic, regexp: nil}
-	if node2.isCatchAll() {
+	if node2.catchesAll() {
 		t.Errorf("node without reg expression is catch all")
 	}
 
 	node3 := node{t: nodeTypeDynamic, regexp: regexp.MustCompile("[0-9]+")}
-	if node3.isCatchAll() {
+	if node3.catchesAll() {
 		t.Errorf("node with no catch all regexp is catch all")
 	}
 
 	node4 := node{t: nodeTypeDynamic, regexp: regexp.MustCompile(catchAllExpression)}
-	if !node4.isCatchAll() {
+	if !node4.catchesAll() {
 		t.Errorf("node with valid catch all expression is not catch all")
 	}
 }
@@ -53,11 +53,11 @@ func TestNode_RegexpEquals_Works(t *testing.T) {
 	node2 := node{t: nodeTypeDynamic, regexp: regexp.MustCompile("[0-9]+")}
 	node3 := node{t: nodeTypeDynamic, regexp: regexp.MustCompile("[0-9]+")}
 
-	if node1.regexpEquals(&node2) {
+	if node1.equals(&node2) {
 		t.Errorf("node1 is equal to node 2")
 	}
 
-	if !node2.regexpEquals(&node3) {
+	if !node2.equals(&node3) {
 		t.Errorf("node2 is not equal to node 3")
 	}
 }

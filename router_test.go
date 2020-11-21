@@ -83,6 +83,7 @@ func TestRouter_ServeHTTP_FindsPaths(t *testing.T) {
 	_ = router.Register(http.MethodPost, "/1/classes/{className}", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/activities/{activityId}/people/{collection}", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/activities/{activityId}/comments", testHandlerFunc)
+	_ = router.Register(http.MethodGet, "/activities/{activityId}-old/comments", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/users/{user}/starred", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/user/starred", testHandlerFunc)
 	_ = router.Register(http.MethodGet, "/users", testHandlerFunc)
