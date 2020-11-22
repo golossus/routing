@@ -178,8 +178,8 @@ func (r *Router) Any(path string, handler http.HandlerFunc) error {
 
 // Register adds a new route in the router
 func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
-	parser := newParser(path)
-	_, err := parser.parse()
+
+	root, leaf, err := createTreeFromPath(path, handler)
 	if err != nil {
 		return err
 	}
@@ -196,8 +196,11 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
 		r.trees[verb] = &tree{}
 	}
 
-	leaf := r.trees[verb].insert(parser.chunks, handler)
+	r.trees[verb].insert(root)
 
+	// [Concern]: this leaf might not be the one we want after inserting the new tree. We
+	// are only copying the handler if the final leaf is already in the tree. We should test
+	// this properly so that this reference corresponds to the final leaf in the tree.
 	if r.asName != "" {
 		r.routes[r.asName] = leaf
 		r.asName = ""
@@ -208,34 +211,26 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
 
 // Prefix combines two routers under a custom path prefix
 func (r *Router) Prefix(path string, router *Router) error {
-	parser := newParser(path)
-	_, err := parser.parse()
-	if err != nil {
-		return err
-	}
-
-	if nil == r.trees {
-		r.trees = make(map[string]*tree)
-	}
 
 	for verb, t := range router.trees {
+		rootNew, leafNew, err := createTreeFromPath(path, nil)
+		if err != nil {
+			return err
+		}
+
+		if nil == r.trees {
+			r.trees = make(map[string]*tree)
+		}
+
 		if _, ok := r.trees[verb]; !ok {
 			r.trees[verb] = &tree{}
 		}
 
-		rootNew, leafNew := createTreeFromChunks(parser.chunks, nil)
-		t.root.setParent(leafNew)
-
-		switch leafNew.(type) {
-		case *nodeDynamic:
-			leafNew.(*nodeDynamic).childrenNodes[t.root.getPrefix()[0]] = t.root
-		case *nodeStatic:
-			leafNew.(*nodeStatic).childNode = t.root
-		}
+		leafNew.addChild(t.root)
 
 		if r.trees[verb].root == nil {
 			r.trees[verb].root = rootNew
-		}else{
+		} else {
 			r.trees[verb].root = r.trees[verb].root.merge(rootNew)
 		}
 	}
@@ -266,12 +261,12 @@ func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error
 
 func getUri(node nodeInterface, url *strings.Builder, params URLParameterBag) error {
 
-	if node == nil{
+	if node == nil {
 		return nil
 	}
 
 	err := getUri(node.getParent(), url, params)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 

@@ -7,47 +7,57 @@ import (
 type tree struct {
 	root nodeInterface
 }
-
-func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) nodeInterface {
-	root, leaf := createTreeFromChunks(chunks, handler)
+// [Santi][Concern] I don't know if this the best signature. Maybe, as find method, this
+// should receive the path and hadler to insert instead of an already create tree root
+func (t *tree) insert(root nodeInterface) nodeInterface {
 
 	if nil == t.root {
 		t.root = root
-		return leaf
+		return t.root
 	}
 
 	t.root = t.root.merge(root)
-	return leaf
-}
-
-func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) (root, leaf nodeInterface) {
-	var h http.HandlerFunc
-
-	for i := 0; i < len(chunks); i++ {
-
-		if len(chunks)-1 == i {
-			h = handler
-		}
-
-		if i == 0 {
-			root = createNodeFromChunk(chunks[i], h)
-			leaf = root
-			continue
-		}
-
-		if nil != leaf {
-			next := createNodeFromChunk(chunks[i], h)
-			leaf.addChild(next)
-			leaf = next
-		}
-	}
-
-	return root, leaf
+	return t.root
 }
 
 func (t *tree) find(path string) nodeInterface {
 	return t.root.find(path)
 }
+
+func createTreeFromPath(path string, handler http.HandlerFunc) (root, leaf nodeInterface, err error) {
+
+	parser := newParser(path)
+	_, err = parser.parse()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var h http.HandlerFunc
+
+	c := parser.chunks
+	for i := 0; i < len(c); i++ {
+
+		if len(c)-1 == i {
+			h = handler
+		}
+
+		if i == 0 {
+			root = createNodeFromChunk(c[i], h)
+			leaf = root
+			continue
+		}
+
+		if nil != leaf {
+			next := createNodeFromChunk(c[i], h)
+			leaf.addChild(next)
+			leaf = next
+		}
+	}
+
+	return root, leaf, nil
+}
+
+
 
 func calcWeight(n nodeInterface) int {
 	if n == nil {
