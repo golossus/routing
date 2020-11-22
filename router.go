@@ -223,7 +223,7 @@ func (r *Router) Prefix(path string, router *Router) error {
 			r.trees[verb] = &tree{}
 		}
 
-		rootNew, leafNew := createTreeFromChunks(parser.chunks)
+		rootNew, leafNew := createTreeFromChunks(parser.chunks, nil)
 		t.root.setParent(leafNew)
 
 		switch leafNew.(type) {

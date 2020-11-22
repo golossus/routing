@@ -9,62 +9,40 @@ type tree struct {
 }
 
 func (t *tree) insert(chunks []chunk, handler http.HandlerFunc) nodeInterface {
-	root2, leaf2 := createTreeFromChunks(chunks)
-	leaf2.setHandler(handler)
+	root, leaf := createTreeFromChunks(chunks, handler)
 
-	if t.root != nil {
-		t.root = t.root.merge(root2)
-	} else {
-		t.root = root2
+	if nil == t.root {
+		t.root = root
+		return leaf
 	}
 
-	return leaf2
+	t.root = t.root.merge(root)
+	return leaf
 }
 
-func createTreeFromChunks(chunks []chunk) (root, leaf nodeInterface) {
-
-	if len(chunks) < 1 {
-		return nil, nil
-	}
+func createTreeFromChunks(chunks []chunk, handler http.HandlerFunc) (root, leaf nodeInterface) {
+	var h http.HandlerFunc
 
 	for i := 0; i < len(chunks); i++ {
+
+		if len(chunks)-1 == i {
+			h = handler
+		}
+
 		if i == 0 {
-			root = createNodeFromChunk(chunks[i])
+			root = createNodeFromChunk(chunks[i], h)
 			leaf = root
 			continue
 		}
 
-		_, leaf = leaf.addChild(createNodeFromChunk(chunks[i]))
+		if nil != leaf {
+			next := createNodeFromChunk(chunks[i], h)
+			leaf.addChild(next)
+			leaf = next
+		}
 	}
 
 	return root, leaf
-
-}
-
-func createNodeFromChunk(c chunk) nodeInterface {
-	var n nodeInterface
-	if c.t == tChunkStatic {
-		n = &nodeStatic{
-			prefix:      c.v,
-			handlerFunc: nil,
-			childNode:   nil,
-			parentNode:  nil,
-			siblingNode: nil,
-			weight:      0,
-		}
-	} else {
-		stops := make(map[byte]nodeInterface)
-		n = &nodeDynamic{
-			prefix:        c.v,
-			handlerFunc:   nil,
-			parentNode:    nil,
-			siblingNode:   nil,
-			childrenNodes: stops,
-			regexp:        c.exp,
-			weight:        0,
-		}
-	}
-	return n
 }
 
 func (t *tree) find(path string) nodeInterface {

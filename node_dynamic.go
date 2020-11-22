@@ -20,6 +20,18 @@ type nodeDynamic struct {
 	weight        int
 }
 
+func newNodeDynamic(prefix string, rex *regexp.Regexp, h http.HandlerFunc) *nodeDynamic {
+	return &nodeDynamic{
+		prefix:        prefix,
+		handlerFunc:   h,
+		parentNode:    nil,
+		siblingNode:   nil,
+		childrenNodes: make(map[byte]nodeInterface),
+		regexp:        rex,
+		weight:        0,
+	}
+}
+
 func (nd *nodeDynamic) hasParameters() bool {
 	return true
 }
@@ -138,21 +150,21 @@ func (nd *nodeDynamic) addSibling(s nodeInterface) nodeInterface {
 	return nd
 }
 
-func (nd *nodeDynamic) addChild(child nodeInterface) (r, l nodeInterface) {
+func (nd *nodeDynamic) addChild(child nodeInterface) nodeInterface {
 	if child == nil {
-		return nd,nd
+		return nd
 	}
 
 	k := child.getPrefix()[0]
 	if nk, ok := nd.childrenNodes[k]; ok {
 		nd.childrenNodes[k] = nk.merge(child)
-		return nd, nd.childrenNodes[k]
+		return nd
 	}
 
 	child.setParent(nd)
 	nd.childrenNodes[k] = child
 
-	return nd, child
+	return nd
 }
 
 func (nd *nodeDynamic) equals(o *nodeDynamic) bool {

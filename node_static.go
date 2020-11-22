@@ -13,6 +13,17 @@ type nodeStatic struct {
 	weight      int
 }
 
+func newNodeStatic(prefix string, h http.HandlerFunc) *nodeStatic{
+	return &nodeStatic{
+		prefix:      prefix,
+		handlerFunc: h,
+		childNode:   nil,
+		parentNode:  nil,
+		siblingNode: nil,
+		weight:      0,
+	}
+}
+
 func (ns *nodeStatic) hasParameters() bool {
 	if ns.parentNode != nil {
 		return ns.parentNode.hasParameters()
@@ -172,20 +183,20 @@ func (ns *nodeStatic) addSibling(s nodeInterface) nodeInterface {
 	return ns
 }
 
-func (ns *nodeStatic) addChild(c nodeInterface) (r, l nodeInterface) {
+func (ns *nodeStatic) addChild(c nodeInterface) nodeInterface {
 	if c == nil {
-		return ns, ns
+		return ns
 	}
 
 	if ns.childNode != nil {
 		ns.childNode = ns.childNode.merge(c)
-		return ns, ns.childNode
+		return ns
 	}
 
 	c.setParent(ns)
 	ns.childNode = c
 
-	return ns, c
+	return ns
 }
 
 func (ns *nodeStatic) common(p string) int {
