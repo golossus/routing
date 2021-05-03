@@ -145,13 +145,16 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 
 	leaf := r.trees[verb].insert(parser.chunks, handler)
 
-
 	rname := r.asName
 	if len(options) > 0 {
 		rname = options[0].Name
 
 		if options[0].Host != "" {
-			leaf.matchers = append(leaf.matchers, byHost(options[0].Host))
+			matcherByHost, err := byHost(options[0].Host)
+			if err != nil {
+				return err
+			}
+			leaf.matchers = append(leaf.matchers, matcherByHost)
 		}
 	}
 

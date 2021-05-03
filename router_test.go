@@ -385,6 +385,13 @@ func TestRouter_MatchingOptions_MatchesByHost(t *testing.T) {
 	assert.Equal(t, 200, res.Code)
 }
 
+func TestRouter_MatchingOptions_MatchesByHostReturnsErrorWhenMalformedHost(t *testing.T){
+	mainRouter := Router{}
+
+	err := mainRouter.Get("/users", testHandlerFunc, MatchingOptions{"", "app.{subdomain:[a-z]+}{m}.test2.com"})
+	assert.Error(t, err)
+}
+
 func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	mainRouter := Router{}
 
