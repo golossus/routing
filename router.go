@@ -46,8 +46,15 @@ func GetURLParameters(request *http.Request) URLParameterBag {
 
 	leaf := ctx.(*node)
 
-	path := request.URL.Path
-	return buildURLParameters(leaf, path, len(path), 0)
+	urlParams := buildURLParameters(leaf, request.URL.Path, len(request.URL.Path), 0)
+
+	for _, matcher := range leaf.matchers {
+		if matches, hostLeaf := matcher(request); matches {
+			urlParams = urlParams.merge(buildURLParameters(hostLeaf, request.Host, len(request.Host), 0))
+		}
+	}
+
+	return urlParams
 }
 
 func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) URLParameterBag {

@@ -27,6 +27,19 @@ func assertPathFound(t *testing.T, router Router, method, path string) {
 	}
 }
 
+func assertPathWithHostFound(t *testing.T, router Router, method, path, host string) {
+	r, _ := http.NewRequest(method, path, nil)
+	r.Host = host
+
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, r)
+
+	if w.Result().StatusCode != 200 || w.Body.String() != path {
+		t.Errorf("%s %s not found", method, path)
+	}
+}
+
 func assertPathNotFound(t *testing.T, router Router, method, path string) {
 	r, _ := http.NewRequest(method, path, nil)
 	w := httptest.NewRecorder()
@@ -163,6 +176,23 @@ func TestGetURLParameters(t *testing.T) {
 	assertPathFound(t, mainRouter, "GET", "/path1/dummy/file/src/image.jpg")
 	assertPathFound(t, mainRouter, "GET", "/2020-05-05")
 	assertPathFound(t, mainRouter, "GET", "/posts/123/2020-05-05")
+}
+
+func TestGetURLParameters_ContainsHostParameters(t *testing.T) {
+	mainRouter := Router{}
+
+	bag := newURLParameterBag(2)
+	bag.add("id", "100")
+	bag.add("subdomain", "dummy")
+	bag.add("domain", "test")
+
+	f := assertRequestHasParameterHandler(t, bag)
+	options := NewMatchingOptions()
+	options.Host = "{subdomain:[a-z]+}.{domain:[a-z]+}.com"
+
+	_ = mainRouter.Register(http.MethodGet, "/path1/{id}", f, options)
+
+	assertPathWithHostFound(t, mainRouter, "GET", "/path1/100", "dummy.test.com")
 }
 
 func TestRouter_AllVerbs(t *testing.T) {

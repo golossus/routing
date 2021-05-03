@@ -97,3 +97,27 @@ func TestURLParameterBag_GetByIndex(t *testing.T) {
 	assertBagParameterAtIndex(t, bag, 2, "v3")
 	assertBagParameterNotAtIndex(t, bag, 3)
 }
+
+func TestURLParameterBag_merge(t *testing.T) {
+	bag := URLParameterBag{}
+
+	bag.add("param1", "v1")
+	bag.add("param2", "v2")
+	bag.add("param3", "v3")
+
+	bag2 := URLParameterBag{}
+
+	bag2.add("p1", "p1")
+	bag2.add("p2", "p2")
+	bag2.add("p3", "p3")
+
+	merged := bag.merge(bag2)
+
+	assertBagParameterAtIndex(t, merged, 0, "v1")
+	assertBagParameterAtIndex(t, merged, 1, "v2")
+	assertBagParameterAtIndex(t, merged, 2, "v3")
+	assertBagParameterAtIndex(t, merged, 3, "p1")
+	assertBagParameterAtIndex(t, merged, 4, "p2")
+	assertBagParameterAtIndex(t, merged, 5, "p3")
+	assertBagParameterNotAtIndex(t, bag, 6)
+}

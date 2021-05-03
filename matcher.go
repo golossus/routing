@@ -2,10 +2,10 @@ package routing
 
 import "net/http"
 
-type matcher func(r *http.Request) bool
+type matcher func(r *http.Request) (bool, *node)
 
 func byHost(host string) (matcher, error) {
-	parser := newParser("/"+host)
+	parser := newParser("/" + host)
 	_, err := parser.parse()
 	if err != nil {
 		return nil, err
@@ -14,7 +14,11 @@ func byHost(host string) (matcher, error) {
 	root, leaf := createTreeFromChunks(parser.chunks)
 	leaf.handler = func(writer http.ResponseWriter, request *http.Request) {}
 
-	return func(r *http.Request) bool {
-		return nil != find(root, "/"+r.Host, r)
+	return func(r *http.Request) (bool, *node) {
+		if r == nil {
+			return false, leaf
+		}
+
+		return nil != find(root, "/"+r.Host, r), leaf
 	}, nil
 }

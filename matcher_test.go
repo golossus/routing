@@ -16,8 +16,13 @@ func Test_byHost_WithSpecificHosts(t *testing.T) {
 	m, _ := byHost(h)
 	m2, _ := byHost(h2)
 
-	assert.True(t, m(req))
-	assert.False(t, m2(req))
+	matches, leaf := m(req)
+	assert.True(t, matches)
+	assert.False(t, leaf.hasParameters())
+
+	matches2, leaf2 := m2(req)
+	assert.False(t, matches2)
+	assert.False(t, leaf2.hasParameters())
 }
 
 func Test_byHost_WithDynamicHosts(t *testing.T) {
@@ -27,11 +32,15 @@ func Test_byHost_WithDynamicHosts(t *testing.T) {
 	req.Host = "app.golossus.test2.com"
 
 	m, _ := byHost(h)
-	assert.True(t, m(req))
+	matches, leaf := m(req)
+	assert.True(t, matches)
+	assert.True(t, leaf.hasParameters())
 
 	req.Host = "app.1234.test2.com"
 	m, _ = byHost(h)
-	assert.False(t, m(req))
+	matches, leaf = m(req)
+	assert.False(t, matches)
+	assert.True(t, leaf.hasParameters())
 }
 
 func Test_byHost_ReturnsErrorWhenMalformedHost(t *testing.T) {

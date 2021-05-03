@@ -28,7 +28,7 @@ func (n *node) match(request *http.Request) bool {
 	}
 
 	for _, m := range n.matchers {
-		if !m(request) {
+		if ok, _ := m(request); !ok {
 			return false
 		}
 	}
@@ -55,11 +55,19 @@ func (n *node) regexpToString() string {
 }
 
 func (n *node) hasParameters() bool {
+
+	for _, m := range n.matchers {
+		if _, hostLeaf := m(nil); hostLeaf.hasParameters() {
+			return true
+		}
+	}
+
 	parent := n
 	for parent != nil {
 		if parent.t == nodeTypeDynamic {
 			return true
 		}
+
 		parent = parent.parent
 	}
 
