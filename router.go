@@ -119,14 +119,16 @@ func (r *Router) As(asName string) *Router {
 }
 
 type MatchingOptions struct {
-	Name string
-	Host string
+	Name    string
+	Host    string
+	Schemas []string
 }
 
 func NewMatchingOptions() MatchingOptions {
 	return MatchingOptions{
-		Name: "",
-		Host: "",
+		Name:    "",
+		Host:    "",
+		Schemas: nil,
 	}
 }
 
@@ -162,6 +164,14 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 				return err
 			}
 			leaf.matchers = append(leaf.matchers, matcherByHost)
+		}
+
+		if len(options[0].Schemas) > 0 {
+			matcherBySchemas, err := bySchemas(options[0].Schemas...)
+			if err != nil {
+				return err
+			}
+			leaf.matchers = append(leaf.matchers, matcherBySchemas)
 		}
 	}
 
