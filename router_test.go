@@ -2,7 +2,6 @@ package routing
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -393,33 +392,33 @@ func TestRouter_MatchingOptions_MatchesByHost(t *testing.T) {
 	res := httptest.NewRecorder()
 	mainRouter.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Code)
+	assertEqual(t, 200, res.Code)
 
 	req, _ = http.NewRequest("GET", "/users/1/create", nil)
 	res = httptest.NewRecorder()
 	mainRouter.ServeHTTP(res, req)
 
-	assert.Equal(t, 404, res.Code)
+	assertEqual(t, 404, res.Code)
 
 	req, _ = http.NewRequest("GET", "/api/users/account", nil)
 	res = httptest.NewRecorder()
 	mainRouter.ServeHTTP(res, req)
 
-	assert.Equal(t, 404, res.Code)
+	assertEqual(t, 404, res.Code)
 
 	req, _ = http.NewRequest("GET", "/api/users/account", nil)
 	req.Host = "api.test.com"
 	res = httptest.NewRecorder()
 	mainRouter.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Code)
+	assertEqual(t, 200, res.Code)
 }
 
 func TestRouter_MatchingOptions_MatchesByHostReturnsErrorWhenMalformedHost(t *testing.T){
 	mainRouter := Router{}
 
 	err := mainRouter.Get("/users", testHandlerFunc, MatchingOptions{"", "app.{subdomain:[a-z]+}{m}.test2.com"})
-	assert.Error(t, err)
+	assertNotNil(t, err)
 }
 
 func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
@@ -501,5 +500,11 @@ func TestRouter_Load_FailsWhenSchemaIsInvalid(t *testing.T) {
 	err := router.Load(&loader)
 	if err == nil {
 		t.Errorf("invalid Schema %s has been loaded", "users")
+	}
+}
+
+func assertEqual(t *testing.T, expected, value int){
+	if expected != value {
+		t.Errorf("%v is not equal to %v", expected, value)
 	}
 }

@@ -1,8 +1,8 @@
 package routing
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net/http"
+	"reflect"
 	"testing"
 )
 
@@ -17,12 +17,12 @@ func Test_byHost_WithSpecificHosts(t *testing.T) {
 	m2, _ := byHost(h2)
 
 	matches, leaf := m(req)
-	assert.True(t, matches)
-	assert.False(t, leaf.hasParameters())
+	assertTrue(t, matches)
+	assertFalse(t, leaf.hasParameters())
 
 	matches2, leaf2 := m2(req)
-	assert.False(t, matches2)
-	assert.False(t, leaf2.hasParameters())
+	assertFalse(t, matches2)
+	assertFalse(t, leaf2.hasParameters())
 }
 
 func Test_byHost_WithDynamicHosts(t *testing.T) {
@@ -33,14 +33,14 @@ func Test_byHost_WithDynamicHosts(t *testing.T) {
 
 	m, _ := byHost(h)
 	matches, leaf := m(req)
-	assert.True(t, matches)
-	assert.True(t, leaf.hasParameters())
+	assertTrue(t, matches)
+	assertTrue(t, leaf.hasParameters())
 
 	req.Host = "app.1234.test2.com"
 	m, _ = byHost(h)
 	matches, leaf = m(req)
-	assert.False(t, matches)
-	assert.True(t, leaf.hasParameters())
+	assertFalse(t, matches)
+	assertTrue(t, leaf.hasParameters())
 }
 
 func Test_byHost_ReturnsErrorWhenMalformedHost(t *testing.T) {
@@ -50,6 +50,31 @@ func Test_byHost_ReturnsErrorWhenMalformedHost(t *testing.T) {
 	req.Host = "app.golossus.test2.com"
 
 	m, err := byHost(h)
-	assert.Nil(t, m)
-	assert.Error(t, err)
+	assertNil(t, m)
+	assertNotNil(t, err)
+}
+
+func assertTrue(t *testing.T, value bool) {
+	if !value{
+		t.Errorf("%v is not true", value)
+	}
+}
+
+func assertFalse(t *testing.T, value bool) {
+	if value{
+		t.Errorf("%v is not false", value)
+	}
+}
+
+func assertNil(t *testing.T, value interface{}) {
+	reflectedValue := reflect.ValueOf(value)
+	if !reflectedValue.IsNil(){
+		t.Errorf("%v is not nil", value)
+	}
+}
+
+func assertNotNil(t *testing.T, value interface{}) {
+	if value == nil{
+		t.Errorf("%v is nil", value)
+	}
 }
