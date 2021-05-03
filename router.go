@@ -89,7 +89,7 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	leaf := tree.find(request.URL.Path)
+	leaf := tree.find(request)
 	if leaf == nil {
 		http.NotFound(response, request)
 		return

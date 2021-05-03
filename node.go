@@ -9,16 +9,32 @@ const (
 	catchAllExpression = "^.*$"
 )
 
+type matcher func(r *http.Request) bool
+
 type node struct {
-	prefix  string
-	handler http.HandlerFunc
-	child   *node
-	parent  *node
-	sibling *node
-	t       int
-	stops   map[byte]*node
-	regexp  *regexp.Regexp
-	w       int
+	prefix   string
+	handler  http.HandlerFunc
+	child    *node
+	parent   *node
+	sibling  *node
+	t        int
+	stops    map[byte]*node
+	regexp   *regexp.Regexp
+	w        int
+	matchers []matcher
+}
+
+func (n *node) match(request *http.Request) bool {
+	if n.handler == nil {
+		return false
+	}
+
+	for _, m := range n.matchers {
+		if !m(request) {
+			return false
+		}
+	}
+	return true
 }
 
 func (n *node) isCatchAll() bool {

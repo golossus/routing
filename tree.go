@@ -163,11 +163,11 @@ func createNodeFromChunk(c chunk) *node {
 	return n
 }
 
-func (t *tree) find(path string) *node {
-	return find(t.root, path)
+func (t *tree) find(request *http.Request) *node {
+	return find(t.root, request.URL.Path, request)
 }
 
-func find(n *node, p string) *node {
+func find(n *node, p string, request *http.Request) *node {
 	if nil == n || len(p) == 0 {
 		return nil
 	}
@@ -183,19 +183,19 @@ func find(n *node, p string) *node {
 				}
 				if validExpression {
 					traversed = true
-					h := find(next, p[i:])
-					if nil != h && nil != h.handler {
+					h := find(next, p[i:], request)
+					if nil != h && h.match(request) {
 						return h
 					}
 				}
 			}
 
 			if p[i] == '/' && !n.isCatchAll() {
-				return find(n.sibling, p)
+				return find(n.sibling, p, request)
 			}
 		}
 
-		if nil != n.handler && !traversed {
+		if n.match(request) && !traversed {
 			validExpression := true
 			if n.regexp != nil {
 				validExpression = n.regexp.MatchString(p)
@@ -205,24 +205,24 @@ func find(n *node, p string) *node {
 			}
 		}
 
-		return find(n.sibling, p)
+		return find(n.sibling, p, request)
 	}
 
 	pos := common(p, n.prefix)
 	if pos == 0 {
-		return find(n.sibling, p)
+		return find(n.sibling, p, request)
 	}
 
 	if pos == len(p) && len(p) == len(n.prefix) {
-		if nil != n.handler {
+		if n.match(request) {
 			return n
 		}
 
 		return nil
 	}
 
-	h := find(n.child, p[pos:])
-	if nil != h && nil != h.handler {
+	h := find(n.child, p[pos:], request)
+	if nil != h && h.match(request) {
 		return h
 	}
 
@@ -231,7 +231,7 @@ func find(n *node, p string) *node {
 			continue
 		}
 
-		return find(next, p)
+		return find(next, p, request)
 	}
 
 	return nil
