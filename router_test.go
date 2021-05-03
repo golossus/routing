@@ -292,6 +292,60 @@ func TestRouter_As_AssignsRouteNames(t *testing.T) {
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
 }
 
+func TestRouter_MatchingOptions_AssignsRouteNames(t *testing.T) {
+	mainRouter := Router{}
+
+	_ = mainRouter.Get("/users", testHandlerFunc, MatchingOptions{"users.get"})
+	_ = mainRouter.Post("/users", testHandlerFunc, MatchingOptions{"users.create"})
+	_ = mainRouter.Post("/users/create", testHandlerFunc, MatchingOptions{"users.create"})
+	_ = mainRouter.Put("/users/{id}", testHandlerFunc, MatchingOptions{"users.update"})
+	_ = mainRouter.Delete("/users/{id}", testDummyHandlerFunc, MatchingOptions{"users.delete"})
+	_ = mainRouter.Delete("/users/{id}", testHandlerFunc, MatchingOptions{"users.softDelete"})
+	_ = mainRouter.Get("/users/profile", testDummyHandlerFunc)
+
+	apiRouter := Router{}
+	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"users.account"})
+	_ = apiRouter.Get("/users/profile", testHandlerFunc, MatchingOptions{"users.profile"})
+
+	_ = mainRouter.Prefix("/api", &apiRouter, MatchingOptions{"api."})
+
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/users", "users.get")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodPost, "/users/create", "users.create")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodPut, "/users/100", "users.update")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.delete")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.softDelete")
+
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "api.users.account")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
+}
+
+func TestRouter_MatchingOptions_AssignsRouteNamesOverAsMethod(t *testing.T) {
+	mainRouter := Router{}
+
+	_ = mainRouter.As("users.getAs").Get("/users", testHandlerFunc, MatchingOptions{"users.get"})
+	_ = mainRouter.As("users.createAs").Post("/users", testHandlerFunc, MatchingOptions{"users.create"})
+	_ = mainRouter.As("users.createAs").Post("/users/create", testHandlerFunc, MatchingOptions{"users.create"})
+	_ = mainRouter.As("users.updateAs").Put("/users/{id}", testHandlerFunc, MatchingOptions{"users.update"})
+	_ = mainRouter.As("users.deleteAs").Delete("/users/{id}", testDummyHandlerFunc, MatchingOptions{"users.delete"})
+	_ = mainRouter.As("users.softDeleteAs").Delete("/users/{id}", testHandlerFunc, MatchingOptions{"users.softDelete"})
+	_ = mainRouter.Get("/users/profile", testDummyHandlerFunc)
+
+	apiRouter := Router{}
+	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"users.account"})
+	_ = apiRouter.Get("/users/profile", testHandlerFunc, MatchingOptions{"users.profile"})
+
+	_ = mainRouter.Prefix("/api", &apiRouter, MatchingOptions{"api."})
+
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/users", "users.get")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodPost, "/users/create", "users.create")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodPut, "/users/100", "users.update")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.delete")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.softDelete")
+
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "api.users.account")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
+}
+
 func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	mainRouter := Router{}
 
@@ -311,7 +365,6 @@ func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	assertRouteIsGenerated(t, mainRouter, "date", "/2020-05-05", map[string]string{"date": "2020-05-05"})
 	assertRouteIsGenerated(t, mainRouter, "posts.id.date", "/posts/10/2020-05-05", map[string]string{"id": "10", "date": "2020-05-05"})
 }
-
 
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
 	bag := URLParameterBag{}
