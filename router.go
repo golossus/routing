@@ -102,81 +102,21 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	leaf.handler(response, request)
 }
 
-// As method sets a name for the next registered route
+// As method sets a name for the next registered route.
+//
+// Deprecated: MatchingOptions should be used instead and will have preference
+// over this method. It will be deleted on minor version after v1.2.0
 func (r *Router) As(asName string) *Router {
 	r.asName = asName
 	return r
 }
 
-// Head is a method to register a new HEAD route in the router.
-func (r *Router) Head(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodHead, path, handler)
-}
-
-// Get is a method to register a new GET route in the router.
-func (r *Router) Get(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodGet, path, handler)
-}
-
-// Post is a method to register a new POST route in the router.
-func (r *Router) Post(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodPost, path, handler)
-}
-
-// Put is a method to register a new PUT route in the router.
-func (r *Router) Put(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodPut, path, handler)
-}
-
-// Patch is a method to register a new PATCH route in the router.
-func (r *Router) Patch(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodPatch, path, handler)
-}
-
-// Delete is a method to register a new DELETE route in the router.
-func (r *Router) Delete(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodDelete, path, handler)
-}
-
-// Connect is a method to register a new CONNECT route in the router.
-func (r *Router) Connect(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodConnect, path, handler)
-}
-
-// Options is a method to register a new OPTIONS route in the router.
-func (r *Router) Options(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodOptions, path, handler)
-}
-
-// Trace is a method to register a new TRACE route in the router.
-func (r *Router) Trace(path string, handler http.HandlerFunc) error {
-	return r.Register(http.MethodTrace, path, handler)
-}
-
-// Any is a method to register a new route with all the verbs.
-func (r *Router) Any(path string, handler http.HandlerFunc) error {
-	kvs := [9]string{
-		http.MethodHead,
-		http.MethodGet,
-		http.MethodPost,
-		http.MethodPut,
-		http.MethodPatch,
-		http.MethodDelete,
-		http.MethodConnect,
-		http.MethodOptions,
-		http.MethodTrace,
-	}
-	for _, verb := range kvs {
-		if err := r.Register(verb, path, handler); err != nil {
-			return err
-		}
-	}
-
-	return nil
+type MatchingOptions struct {
+	name string
 }
 
 // Register adds a new route in the router
-func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
+func (r *Router) Register(verb, path string, handler http.HandlerFunc, options ...MatchingOptions) error {
 	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
@@ -197,16 +137,88 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc) error {
 
 	leaf := r.trees[verb].insert(parser.chunks, handler)
 
-	if r.asName != "" {
-		r.routes[r.asName] = leaf
-		r.asName = ""
+	rname := r.asName
+	if len(options) > 0 {
+		rname = options[0].name
+	}
+
+	if rname != "" {
+		r.routes[rname] = leaf
+	}
+	r.asName = ""
+
+	return nil
+}
+
+// Head is a method to register a new HEAD route in the router.
+func (r *Router) Head(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodHead, path, handler, options...)
+}
+
+// Get is a method to register a new GET route in the router.
+func (r *Router) Get(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodGet, path, handler, options...)
+}
+
+// Post is a method to register a new POST route in the router.
+func (r *Router) Post(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodPost, path, handler, options...)
+}
+
+// Put is a method to register a new PUT route in the router.
+func (r *Router) Put(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodPut, path, handler, options...)
+}
+
+// Patch is a method to register a new PATCH route in the router.
+func (r *Router) Patch(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodPatch, path, handler, options...)
+}
+
+// Delete is a method to register a new DELETE route in the router.
+func (r *Router) Delete(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodDelete, path, handler, options...)
+}
+
+// Connect is a method to register a new CONNECT route in the router.
+func (r *Router) Connect(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodConnect, path, handler, options...)
+}
+
+// Options is a method to register a new OPTIONS route in the router.
+func (r *Router) Options(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodOptions, path, handler, options...)
+}
+
+// Trace is a method to register a new TRACE route in the router.
+func (r *Router) Trace(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	return r.Register(http.MethodTrace, path, handler, options...)
+}
+
+// Any is a method to register a new route with all the verbs.
+func (r *Router) Any(path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	kvs := [9]string{
+		http.MethodHead,
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+		http.MethodConnect,
+		http.MethodOptions,
+		http.MethodTrace,
+	}
+	for _, verb := range kvs {
+		if err := r.Register(verb, path, handler, options...); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 // Prefix combines two routers under a custom path prefix
-func (r *Router) Prefix(path string, router *Router) error {
+func (r *Router) Prefix(path string, router *Router, options ...MatchingOptions) error {
 	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
@@ -234,8 +246,13 @@ func (r *Router) Prefix(path string, router *Router) error {
 		r.trees[verb].root = combine(r.trees[verb].root, rootNew)
 	}
 
+	rname := r.asName
+	if len(options) > 0 {
+		rname = options[0].name
+	}
+
 	for name, leaf := range router.routes {
-		r.routes[fmt.Sprintf("%s%s", r.asName, name)] = leaf
+		r.routes[fmt.Sprintf("%s%s", rname, name)] = leaf
 	}
 	r.asName = ""
 
@@ -260,12 +277,12 @@ func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error
 
 func getUri(node *node, url *strings.Builder, params URLParameterBag) error {
 
-	if node == nil{
+	if node == nil {
 		return nil
 	}
 
 	err := getUri(node.parent, url, params)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
