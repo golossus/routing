@@ -2,6 +2,7 @@ package routing
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -295,19 +296,19 @@ func TestRouter_As_AssignsRouteNames(t *testing.T) {
 func TestRouter_MatchingOptions_AssignsRouteNames(t *testing.T) {
 	mainRouter := Router{}
 
-	_ = mainRouter.Get("/users", testHandlerFunc, MatchingOptions{"users.get"})
-	_ = mainRouter.Post("/users", testHandlerFunc, MatchingOptions{"users.create"})
-	_ = mainRouter.Post("/users/create", testHandlerFunc, MatchingOptions{"users.create"})
-	_ = mainRouter.Put("/users/{id}", testHandlerFunc, MatchingOptions{"users.update"})
-	_ = mainRouter.Delete("/users/{id}", testDummyHandlerFunc, MatchingOptions{"users.delete"})
-	_ = mainRouter.Delete("/users/{id}", testHandlerFunc, MatchingOptions{"users.softDelete"})
+	_ = mainRouter.Get("/users", testHandlerFunc, MatchingOptions{"users.get", ""})
+	_ = mainRouter.Post("/users", testHandlerFunc, MatchingOptions{"users.create", ""})
+	_ = mainRouter.Post("/users/create", testHandlerFunc, MatchingOptions{"users.create", ""})
+	_ = mainRouter.Put("/users/{id}", testHandlerFunc, MatchingOptions{"users.update", ""})
+	_ = mainRouter.Delete("/users/{id}", testDummyHandlerFunc, MatchingOptions{"users.delete", ""})
+	_ = mainRouter.Delete("/users/{id}", testHandlerFunc, MatchingOptions{"users.softDelete", ""})
 	_ = mainRouter.Get("/users/profile", testDummyHandlerFunc)
 
 	apiRouter := Router{}
-	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"users.account"})
-	_ = apiRouter.Get("/users/profile", testHandlerFunc, MatchingOptions{"users.profile"})
+	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"users.account", ""})
+	_ = apiRouter.Get("/users/profile", testHandlerFunc, MatchingOptions{"users.profile", ""})
 
-	_ = mainRouter.Prefix("/api", &apiRouter, MatchingOptions{"api."})
+	_ = mainRouter.Prefix("/api", &apiRouter, "api.")
 
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/users", "users.get")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodPost, "/users/create", "users.create")
@@ -322,19 +323,19 @@ func TestRouter_MatchingOptions_AssignsRouteNames(t *testing.T) {
 func TestRouter_MatchingOptions_AssignsRouteNamesOverAsMethod(t *testing.T) {
 	mainRouter := Router{}
 
-	_ = mainRouter.As("users.getAs").Get("/users", testHandlerFunc, MatchingOptions{"users.get"})
-	_ = mainRouter.As("users.createAs").Post("/users", testHandlerFunc, MatchingOptions{"users.create"})
-	_ = mainRouter.As("users.createAs").Post("/users/create", testHandlerFunc, MatchingOptions{"users.create"})
-	_ = mainRouter.As("users.updateAs").Put("/users/{id}", testHandlerFunc, MatchingOptions{"users.update"})
-	_ = mainRouter.As("users.deleteAs").Delete("/users/{id}", testDummyHandlerFunc, MatchingOptions{"users.delete"})
-	_ = mainRouter.As("users.softDeleteAs").Delete("/users/{id}", testHandlerFunc, MatchingOptions{"users.softDelete"})
+	_ = mainRouter.As("users.getAs").Get("/users", testHandlerFunc, MatchingOptions{"users.get", ""})
+	_ = mainRouter.As("users.createAs").Post("/users", testHandlerFunc, MatchingOptions{"users.create", ""})
+	_ = mainRouter.As("users.createAs").Post("/users/create", testHandlerFunc, MatchingOptions{"users.create", ""})
+	_ = mainRouter.As("users.updateAs").Put("/users/{id}", testHandlerFunc, MatchingOptions{"users.update", ""})
+	_ = mainRouter.As("users.deleteAs").Delete("/users/{id}", testDummyHandlerFunc, MatchingOptions{"users.delete", ""})
+	_ = mainRouter.As("users.softDeleteAs").Delete("/users/{id}", testHandlerFunc, MatchingOptions{"users.softDelete", ""})
 	_ = mainRouter.Get("/users/profile", testDummyHandlerFunc)
 
 	apiRouter := Router{}
-	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"users.account"})
-	_ = apiRouter.Get("/users/profile", testHandlerFunc, MatchingOptions{"users.profile"})
+	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"users.account", ""})
+	_ = apiRouter.Get("/users/profile", testHandlerFunc, MatchingOptions{"users.profile", ""})
 
-	_ = mainRouter.Prefix("/api", &apiRouter, MatchingOptions{"api."})
+	_ = mainRouter.Prefix("/api", &apiRouter, "api.")
 
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/users", "users.get")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodPost, "/users/create", "users.create")
@@ -344,6 +345,44 @@ func TestRouter_MatchingOptions_AssignsRouteNamesOverAsMethod(t *testing.T) {
 
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "api.users.account")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
+}
+
+func TestRouter_MatchingOptions_MatchesByHost(t *testing.T) {
+	mainRouter := Router{}
+
+	_ = mainRouter.Get("/users", testHandlerFunc, MatchingOptions{"", ""})
+	_ = mainRouter.Get("/users/{id}", testHandlerFunc, MatchingOptions{"", ""})
+	_ = mainRouter.Get("/users/{id}/create", testHandlerFunc, MatchingOptions{"", "test.com"})
+
+	apiRouter := Router{}
+	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"", "api.test.com"})
+	_ = mainRouter.Prefix("/api", &apiRouter, "api.")
+
+	req, _ := http.NewRequest("GET", "/users/1/create", nil)
+	req.Host = "test.com"
+	res := httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Code)
+
+	req, _ = http.NewRequest("GET", "/users/1/create", nil)
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assert.Equal(t, 404, res.Code)
+
+	req, _ = http.NewRequest("GET", "/api/users/account", nil)
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assert.Equal(t, 404, res.Code)
+
+	req, _ = http.NewRequest("GET", "/api/users/account", nil)
+	req.Host = "api.test.com"
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Code)
 }
 
 func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {

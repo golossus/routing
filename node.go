@@ -9,8 +9,6 @@ const (
 	catchAllExpression = "^.*$"
 )
 
-type matcher func(r *http.Request) bool
-
 type node struct {
 	prefix   string
 	handler  http.HandlerFunc
