@@ -44,6 +44,19 @@ func (u *URLParameterBag) GetByIndex(index uint) (string, error) {
 	return u.params[i].value, nil
 }
 
+func (u URLParameterBag) merge(other URLParameterBag) URLParameterBag {
+	bag := newURLParameterBag(u.capacity + other.capacity)
+
+	for _, param := range u.params {
+		bag.add(param.name, param.value)
+	}
+	for _, param := range other.params {
+		bag.add(param.name, param.value)
+	}
+
+	return bag
+}
+
 func newURLParameterBag(capacity uint) URLParameterBag {
 	return URLParameterBag{
 		capacity: capacity,

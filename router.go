@@ -46,8 +46,15 @@ func GetURLParameters(request *http.Request) URLParameterBag {
 
 	leaf := ctx.(*node)
 
-	path := request.URL.Path
-	return buildURLParameters(leaf, path, len(path), 0)
+	urlParams := buildURLParameters(leaf, request.URL.Path, len(request.URL.Path), 0)
+
+	for _, matcher := range leaf.matchers {
+		if matches, hostLeaf := matcher(request); matches {
+			urlParams = urlParams.merge(buildURLParameters(hostLeaf, request.Host, len(request.Host), 0))
+		}
+	}
+
+	return urlParams
 }
 
 func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) URLParameterBag {
@@ -89,7 +96,7 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	leaf := tree.find(request.URL.Path)
+	leaf := tree.find(request)
 	if leaf == nil {
 		http.NotFound(response, request)
 		return
@@ -112,7 +119,15 @@ func (r *Router) As(asName string) *Router {
 }
 
 type MatchingOptions struct {
-	name string
+	Name string
+	Host string
+}
+
+func NewMatchingOptions() MatchingOptions {
+	return MatchingOptions{
+		Name: "",
+		Host: "",
+	}
 }
 
 // Register adds a new route in the router
@@ -139,7 +154,15 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 
 	rname := r.asName
 	if len(options) > 0 {
-		rname = options[0].name
+		rname = options[0].Name
+
+		if options[0].Host != "" {
+			matcherByHost, err := byHost(options[0].Host)
+			if err != nil {
+				return err
+			}
+			leaf.matchers = append(leaf.matchers, matcherByHost)
+		}
 	}
 
 	if rname != "" {
@@ -218,7 +241,7 @@ func (r *Router) Any(path string, handler http.HandlerFunc, options ...MatchingO
 }
 
 // Prefix combines two routers under a custom path prefix
-func (r *Router) Prefix(path string, router *Router, options ...MatchingOptions) error {
+func (r *Router) Prefix(path string, router *Router, name ...string) error {
 	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
@@ -247,8 +270,8 @@ func (r *Router) Prefix(path string, router *Router, options ...MatchingOptions)
 	}
 
 	rname := r.asName
-	if len(options) > 0 {
-		rname = options[0].name
+	if len(name) > 0 {
+		rname = name[0]
 	}
 
 	for name, leaf := range router.routes {
