@@ -52,11 +52,11 @@ func bySchemas(schemas ...string) (matcher, error) {
 func byHeaders(headers map[string]string) (matcher, error) {
 
 	return func(r *http.Request) (bool, *node) {
-		if r == nil || len(headers) > len(r.Header){
+		if r == nil || len(headers) > len(r.Header) {
 			return false, nil
 		}
 		for key, value := range headers {
-			if r.Header.Get(key) != value{
+			if r.Header.Get(key) != value {
 				return false, nil
 			}
 		}
@@ -67,14 +67,25 @@ func byHeaders(headers map[string]string) (matcher, error) {
 func byQueryParameters(params map[string]string) (matcher, error) {
 
 	return func(r *http.Request) (bool, *node) {
-		if r == nil || len(params) > len(r.URL.Query()){
+		if r == nil || len(params) > len(r.URL.Query()) {
 			return false, nil
 		}
 		for key, value := range params {
-			if r.URL.Query().Get(key) != value{
+			if r.URL.Query().Get(key) != value {
 				return false, nil
 			}
 		}
 		return true, nil
+	}, nil
+}
+
+func byCustomMatcher(custom func(r *http.Request) bool) (matcher, error) {
+
+	return func(r *http.Request) (bool, *node) {
+		if r == nil {
+			return false, nil
+		}
+
+		return custom(r), nil
 	}, nil
 }

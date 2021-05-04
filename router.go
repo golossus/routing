@@ -124,6 +124,7 @@ type MatchingOptions struct {
 	Schemas []string
 	Headers map[string]string
 	QueryParams map[string]string
+	Custom func(r *http.Request) bool
 }
 
 func NewMatchingOptions() MatchingOptions {
@@ -133,6 +134,7 @@ func NewMatchingOptions() MatchingOptions {
 		Schemas: nil,
 		Headers: map[string]string{},
 		QueryParams: map[string]string{},
+		Custom: nil,
 	}
 }
 
@@ -187,11 +189,19 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 		}
 
 		if len(options[0].QueryParams) > 0 {
-			matcherByHeaders, err := byQueryParameters(options[0].QueryParams)
+			matcherByQueryParams, err := byQueryParameters(options[0].QueryParams)
 			if err != nil {
 				return err
 			}
-			leaf.matchers = append(leaf.matchers, matcherByHeaders)
+			leaf.matchers = append(leaf.matchers, matcherByQueryParams)
+		}
+
+		if options[0].Custom != nil {
+			matcherByCustomFunc, err := byCustomMatcher(options[0].Custom)
+			if err != nil {
+				return err
+			}
+			leaf.matchers = append(leaf.matchers, matcherByCustomFunc)
 		}
 	}
 
