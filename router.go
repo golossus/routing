@@ -322,6 +322,21 @@ func (r *Router) Prefix(path string, router *Router, name ...string) error {
 	return nil
 }
 
+func (r *Router) StaticFiles(prefix, dir string) error {
+	return r.Register("GET", prefix+"/{name:.*}", func(writer http.ResponseWriter, request *http.Request) {
+
+		urlParams := GetURLParameters(request)
+		name, err := urlParams.GetByName("name")
+		if err != nil{
+			writer.WriteHeader(404)
+			return
+		}
+
+		request.URL.Path = name
+		http.FileServer(http.Dir(dir)).ServeHTTP(writer, request)
+	})
+}
+
 // GenerateURL generates a URL from route name
 func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error) {
 	node, ok := r.routes[name]

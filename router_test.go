@@ -2,6 +2,7 @@ package routing
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -588,6 +589,32 @@ func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	assertRouteIsGenerated(t, mainRouter, "path1.file", "/path1/100/2098939/image.jpg", map[string]string{"file": "100/2098939/image.jpg"})
 	assertRouteIsGenerated(t, mainRouter, "date", "/2020-05-05", map[string]string{"date": "2020-05-05"})
 	assertRouteIsGenerated(t, mainRouter, "posts.id.date", "/posts/10/2020-05-05", map[string]string{"id": "10", "date": "2020-05-05"})
+}
+
+func TestRouter_StaticFiles_ServerStaticFileFromDir(t *testing.T) {
+	mainRouter := Router{}
+
+	_ = mainRouter.StaticFiles("/path1", "./fixtures")
+
+	req, _ := http.NewRequest("GET", "/path1/test.html", nil)
+	res := httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+	assertEqual(t, 200, res.Code)
+	file, _ := ioutil.ReadFile("./fixtures/test.html")
+	if res.Body.String() != string(file) {
+		t.Errorf("Invalid file %s", file)
+	}
+
+	req, _ = http.NewRequest("GET", "/path1/index.html", nil)
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+	assertEqual(t, 301, res.Code)
+
+
+	req, _ = http.NewRequest("GET", "/path1/not-found.html", nil)
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+	assertEqual(t, 404, res.Code)
 }
 
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
