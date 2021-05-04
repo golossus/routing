@@ -63,3 +63,18 @@ func byHeaders(headers map[string]string) (matcher, error) {
 		return true, nil
 	}, nil
 }
+
+func byQueryParameters(params map[string]string) (matcher, error) {
+
+	return func(r *http.Request) (bool, *node) {
+		if r == nil || len(params) > len(r.URL.Query()){
+			return false, nil
+		}
+		for key, value := range params {
+			if r.URL.Query().Get(key) != value{
+				return false, nil
+			}
+		}
+		return true, nil
+	}, nil
+}

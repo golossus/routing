@@ -66,7 +66,7 @@ func Test_byHeaders_ReturnsFalseWhenInsufficientHeaders(t *testing.T){
 	assertFalse(t, matches)
 }
 
-func Test_byHeaders_ReturnsFalseWhenHeaderDoesNotMach(t *testing.T){
+func Test_byHeaders_ReturnsFalseWhenHeaderDoNotMach(t *testing.T){
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.Header.Set("key1", "value1")
 	req.Header.Set("key2", "invalid")
@@ -93,6 +93,44 @@ func Test_byHeaders_ReturnsTrueWhenHeadersMatch(t *testing.T){
 	matches, _ := m(req)
 	assertTrue(t, matches)
 }
+
+func Test_byHeaders_ReturnsFalseWhenInsufficientQueryParams(t *testing.T){
+	req, _ := http.NewRequest("GET", "/", nil)
+
+	params := map[string]string{
+		"key1": "value1",
+	}
+
+	m, _ := byQueryParameters(params)
+	matches, _ := m(req)
+	assertFalse(t, matches)
+}
+
+func Test_byHeaders_ReturnsFalseWhenQueryParamsDoNotMach(t *testing.T){
+	req, _ := http.NewRequest("GET", "/?key1=value1&key2=invalid", nil)
+	params := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+	}
+
+	m, _ := byQueryParameters(params)
+	matches, _ := m(req)
+	assertFalse(t, matches)
+}
+
+func Test_byHeaders_ReturnsTrueWhenQueryParamsMatch(t *testing.T){
+	req, _ := http.NewRequest("GET", "/?key1=value1&key2=value2", nil)
+	params := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+	}
+
+	m, _ := byQueryParameters(params)
+	matches, _ := m(req)
+	assertTrue(t, matches)
+}
+
+
 
 func assertTrue(t *testing.T, value bool) {
 	if !value{
