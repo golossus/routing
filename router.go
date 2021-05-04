@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -119,22 +120,22 @@ func (r *Router) As(asName string) *Router {
 }
 
 type MatchingOptions struct {
-	Name    string
-	Host    string
-	Schemas []string
-	Headers map[string]string
+	Name        string
+	Host        string
+	Schemas     []string
+	Headers     map[string]string
 	QueryParams map[string]string
-	Custom func(r *http.Request) bool
+	Custom      func(r *http.Request) bool
 }
 
 func NewMatchingOptions() MatchingOptions {
 	return MatchingOptions{
-		Name:    "",
-		Host:    "",
-		Schemas: nil,
-		Headers: map[string]string{},
+		Name:        "",
+		Host:        "",
+		Schemas:     nil,
+		Headers:     map[string]string{},
 		QueryParams: map[string]string{},
-		Custom: nil,
+		Custom:      nil,
 	}
 }
 
@@ -161,6 +162,8 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 	leaf := r.trees[verb].insert(parser.chunks, handler)
 
 	rname := r.asName
+	r.asName = ""
+
 	if len(options) > 0 {
 		rname = options[0].Name
 
@@ -205,12 +208,33 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 		}
 	}
 
-	if rname != "" {
-		r.routes[rname] = leaf
-	}
-	r.asName = ""
+	rname = r.generateRouteName(rname, parser)
+
+	r.routes[rname] = leaf
 
 	return nil
+}
+
+func (r *Router) generateRouteName(baseName string, parser *parser) string {
+	if baseName == "" && parser != nil {
+		for _, c := range parser.chunks {
+			baseName += c.v
+		}
+		baseName = strings.Trim(strings.Replace(baseName, "/", "_", -1), "_")
+	}
+
+	i := 0
+	existsName := baseName
+	for {
+		_, ok := r.routes[existsName]
+		if !ok {
+			break
+		}
+		i++
+		existsName = baseName + "_" + strconv.Itoa(i)
+	}
+
+	return existsName
 }
 
 // Head is a method to register a new HEAD route in the router.
@@ -281,7 +305,7 @@ func (r *Router) Any(path string, handler http.HandlerFunc, options ...MatchingO
 }
 
 // Prefix combines two routers under a custom path prefix
-func (r *Router) Prefix(path string, router *Router, name ...string) error {
+func (r *Router) Prefix(path string, router *Router) error {
 	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
@@ -309,15 +333,11 @@ func (r *Router) Prefix(path string, router *Router, name ...string) error {
 		r.trees[verb].root = combine(r.trees[verb].root, rootNew)
 	}
 
-	rname := r.asName
-	if len(name) > 0 {
-		rname = name[0]
-	}
+	r.asName = ""
 
 	for name, leaf := range router.routes {
-		r.routes[fmt.Sprintf("%s%s", rname, name)] = leaf
+		r.routes[r.generateRouteName(name, nil)] = leaf
 	}
-	r.asName = ""
 
 	return nil
 }
@@ -327,7 +347,7 @@ func (r *Router) StaticFiles(prefix, dir string) error {
 
 		urlParams := GetURLParameters(request)
 		name, err := urlParams.GetByName("name")
-		if err != nil{
+		if err != nil {
 			writer.WriteHeader(404)
 			return
 		}

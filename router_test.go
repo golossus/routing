@@ -320,8 +320,8 @@ func TestRouter_As_AssignsRouteNames(t *testing.T) {
 	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.delete")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.softDelete")
 
-	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "api.users.account")
-	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "users.account")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "users.profile")
 }
 
 func TestRouter_MatchingOptions_AssignsRouteNames(t *testing.T) {
@@ -339,7 +339,7 @@ func TestRouter_MatchingOptions_AssignsRouteNames(t *testing.T) {
 	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"users.account", "", []string{}, map[string]string{}, map[string]string{}, nil})
 	_ = apiRouter.Get("/users/profile", testHandlerFunc, MatchingOptions{"users.profile", "", []string{}, map[string]string{}, map[string]string{}, nil})
 
-	_ = mainRouter.Prefix("/api", &apiRouter, "api.")
+	_ = mainRouter.Prefix("/api", &apiRouter)
 
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/users", "users.get")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodPost, "/users/create", "users.create")
@@ -347,8 +347,8 @@ func TestRouter_MatchingOptions_AssignsRouteNames(t *testing.T) {
 	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.delete")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.softDelete")
 
-	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "api.users.account")
-	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "users.account")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "users.profile")
 }
 
 func TestRouter_MatchingOptions_AssignsRouteNamesOverAsMethod(t *testing.T) {
@@ -366,7 +366,7 @@ func TestRouter_MatchingOptions_AssignsRouteNamesOverAsMethod(t *testing.T) {
 	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"users.account", "", []string{}, map[string]string{}, map[string]string{}, nil})
 	_ = apiRouter.Get("/users/profile", testHandlerFunc, MatchingOptions{"users.profile", "", []string{}, map[string]string{}, map[string]string{}, nil})
 
-	_ = mainRouter.Prefix("/api", &apiRouter, "api.")
+	_ = mainRouter.Prefix("/api", &apiRouter)
 
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/users", "users.get")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodPost, "/users/create", "users.create")
@@ -374,8 +374,8 @@ func TestRouter_MatchingOptions_AssignsRouteNamesOverAsMethod(t *testing.T) {
 	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.delete")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodDelete, "/users/100", "users.softDelete")
 
-	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "api.users.account")
-	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "api.users.profile")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "users.account")
+	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "users.profile")
 }
 
 func TestRouter_MatchingOptions_MatchesByHost(t *testing.T) {
@@ -387,7 +387,7 @@ func TestRouter_MatchingOptions_MatchesByHost(t *testing.T) {
 
 	apiRouter := Router{}
 	_ = apiRouter.Get("/users/account", testHandlerFunc, MatchingOptions{"", "api.test.com", []string{}, map[string]string{}, map[string]string{}, nil})
-	_ = mainRouter.Prefix("/api", &apiRouter, "api.")
+	_ = mainRouter.Prefix("/api", &apiRouter)
 
 	req, _ := http.NewRequest("GET", "/users/1/create", nil)
 	req.Host = "test.com"
@@ -582,13 +582,13 @@ func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	postsRouter := Router{}
 	_ = postsRouter.As("date").Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
 
-	_ = mainRouter.As("posts.id.").Prefix("/posts/{id}", &postsRouter)
+	_ = mainRouter.Prefix("/posts/{id}", &postsRouter)
 
 	assertRouteIsGenerated(t, mainRouter, "path1", "/path1", map[string]string{})
 	assertRouteIsGenerated(t, mainRouter, "path1.id.name", "/path1/100/abc", map[string]string{"id": "100", "name": "abc"})
 	assertRouteIsGenerated(t, mainRouter, "path1.file", "/path1/100/2098939/image.jpg", map[string]string{"file": "100/2098939/image.jpg"})
 	assertRouteIsGenerated(t, mainRouter, "date", "/2020-05-05", map[string]string{"date": "2020-05-05"})
-	assertRouteIsGenerated(t, mainRouter, "posts.id.date", "/posts/10/2020-05-05", map[string]string{"id": "10", "date": "2020-05-05"})
+	assertRouteIsGenerated(t, mainRouter, "date_1", "/posts/10/2020-05-05", map[string]string{"id": "10", "date": "2020-05-05"})
 }
 
 func TestRouter_StaticFiles_ServerStaticFileFromDir(t *testing.T) {
@@ -615,6 +615,25 @@ func TestRouter_StaticFiles_ServerStaticFileFromDir(t *testing.T) {
 	res = httptest.NewRecorder()
 	mainRouter.ServeHTTP(res, req)
 	assertEqual(t, 404, res.Code)
+}
+
+func TestRouter_Register_GeneratesValidRouteNames(t *testing.T) {
+	mainRouter := Router{}
+
+	_ = mainRouter.Register(http.MethodGet, "/", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/with/slash", testHandlerFunc, MatchingOptions{Name: "/w/s"})
+	_ = mainRouter.Register(http.MethodGet, "/path1", testHandlerFunc, MatchingOptions{Name: "path"})
+	_ = mainRouter.Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/path1/{file:.*}", testHandlerFunc,MatchingOptions{Name: "path"})
+	_ = mainRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
+
+
+	assertRouteIsGenerated(t, mainRouter, "", "/", map[string]string{})
+	assertRouteIsGenerated(t, mainRouter, "/w/s", "/with/slash", map[string]string{})
+	assertRouteIsGenerated(t, mainRouter, "path", "/path1", map[string]string{})
+	assertRouteIsGenerated(t, mainRouter, "path1_id_name", "/path1/100/abc", map[string]string{"id": "100", "name": "abc"})
+	assertRouteIsGenerated(t, mainRouter, "path_1", "/path1/100/2098939/image.jpg", map[string]string{"file": "100/2098939/image.jpg"})
+	assertRouteIsGenerated(t, mainRouter, "date", "/2020-05-05", map[string]string{"date": "2020-05-05"})
 }
 
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
