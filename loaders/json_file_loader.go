@@ -2,7 +2,7 @@ package loaders
 
 import (
 	"encoding/json"
-	. "github.com/golossus/routing"
+	"github.com/golossus/routing"
 	"io/ioutil"
 )
 
@@ -21,11 +21,11 @@ type JsonRoute struct {
 
 // JsonFileLoader type loads routes from Json files
 type JsonFileLoader struct {
-	routes []RouteDef
+	routes []routing.RouteDef
 }
 
 // Load implements routing.Loader interface
-func (l *JsonFileLoader) Load() []RouteDef {
+func (l *JsonFileLoader) Load() []routing.RouteDef {
 	return l.routes
 }
 
@@ -44,9 +44,9 @@ func (l *JsonFileLoader) FromFile(files ...string) error {
 			return err
 		}
 
-		fileRoutes := make([]RouteDef, 0, len(rs.Routes))
+		fileRoutes := make([]routing.RouteDef, 0, len(rs.Routes))
 		for _, r := range rs.Routes {
-			fileRoutes = append(fileRoutes, RouteDef{
+			fileRoutes = append(fileRoutes, routing.RouteDef{
 				Method:  r.Method,
 				Schema:  r.Schema,
 				Handler: r.Handler,

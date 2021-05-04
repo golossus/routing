@@ -16,7 +16,6 @@ func validateTokens(expectedTokens, tokens []token, t *testing.T) {
 	}
 }
 
-
 func TestLexer_ScanAll_SimplePath(t *testing.T) {
 	lexer := newLexer("/path1")
 

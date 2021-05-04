@@ -610,7 +610,6 @@ func TestRouter_StaticFiles_ServerStaticFileFromDir(t *testing.T) {
 	mainRouter.ServeHTTP(res, req)
 	assertEqual(t, 301, res.Code)
 
-
 	req, _ = http.NewRequest("GET", "/path1/not-found.html", nil)
 	res = httptest.NewRecorder()
 	mainRouter.ServeHTTP(res, req)
@@ -624,9 +623,8 @@ func TestRouter_Register_GeneratesValidRouteNames(t *testing.T) {
 	_ = mainRouter.Register(http.MethodGet, "/with/slash", testHandlerFunc, MatchingOptions{Name: "/w/s"})
 	_ = mainRouter.Register(http.MethodGet, "/path1", testHandlerFunc, MatchingOptions{Name: "path"})
 	_ = mainRouter.Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", testHandlerFunc)
-	_ = mainRouter.Register(http.MethodGet, "/path1/{file:.*}", testHandlerFunc,MatchingOptions{Name: "path"})
+	_ = mainRouter.Register(http.MethodGet, "/path1/{file:.*}", testHandlerFunc, MatchingOptions{Name: "path"})
 	_ = mainRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
-
 
 	assertRouteIsGenerated(t, mainRouter, "", "/", map[string]string{})
 	assertRouteIsGenerated(t, mainRouter, "/w/s", "/with/slash", map[string]string{})
