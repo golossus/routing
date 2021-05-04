@@ -54,6 +54,46 @@ func Test_byHost_ReturnsErrorWhenMalformedHost(t *testing.T) {
 	assertNotNil(t, err)
 }
 
+func Test_byHeaders_ReturnsFalseWhenInsufficientHeaders(t *testing.T){
+	req, _ := http.NewRequest("GET", "/", nil)
+
+	headers := map[string]string{
+		"key1": "value1",
+	}
+
+	m, _ := byHeaders(headers)
+	matches, _ := m(req)
+	assertFalse(t, matches)
+}
+
+func Test_byHeaders_ReturnsFalseWhenHeaderDoesNotMach(t *testing.T){
+	req, _ := http.NewRequest("GET", "/", nil)
+	req.Header.Set("key1", "value1")
+	req.Header.Set("key2", "invalid")
+	headers := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+	}
+
+	m, _ := byHeaders(headers)
+	matches, _ := m(req)
+	assertFalse(t, matches)
+}
+
+func Test_byHeaders_ReturnsTrueWhenHeadersMatch(t *testing.T){
+	req, _ := http.NewRequest("GET", "/", nil)
+	req.Header.Set("key1", "value1")
+	req.Header.Set("key2", "value2")
+	headers := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+	}
+
+	m, _ := byHeaders(headers)
+	matches, _ := m(req)
+	assertTrue(t, matches)
+}
+
 func assertTrue(t *testing.T, value bool) {
 	if !value{
 		t.Errorf("%v is not true", value)

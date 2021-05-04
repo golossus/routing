@@ -122,6 +122,7 @@ type MatchingOptions struct {
 	Name    string
 	Host    string
 	Schemas []string
+	Headers map[string]string
 }
 
 func NewMatchingOptions() MatchingOptions {
@@ -129,6 +130,7 @@ func NewMatchingOptions() MatchingOptions {
 		Name:    "",
 		Host:    "",
 		Schemas: nil,
+		Headers: map[string]string{},
 	}
 }
 
@@ -172,6 +174,14 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 				return err
 			}
 			leaf.matchers = append(leaf.matchers, matcherBySchemas)
+		}
+
+		if len(options[0].Headers) > 0 {
+			matcherByHeaders, err := byHeaders(options[0].Headers)
+			if err != nil {
+				return err
+			}
+			leaf.matchers = append(leaf.matchers, matcherByHeaders)
 		}
 	}
 
