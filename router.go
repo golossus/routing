@@ -431,7 +431,8 @@ func (r *Router) Load(loader Loader) error {
 	return nil
 }
 
-// Load registers a list of routes retrieved from a loader
+// PrioritizeByWeight changes the router underlying tree to prioritize search
+// through the branches of higher weight.
 func (r *Router) PrioritizeByWeight() {
 	for _, tree := range r.trees {
 		_ = calcWeight(tree.root)

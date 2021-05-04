@@ -87,7 +87,7 @@ func TestParser_Parse_ReturnsErrorWhenExpressionIsInvalid(t *testing.T) {
 		parser := newParser(path)
 		_, err := parser.parse()
 
-		if  err == nil {
+		if err == nil {
 			t.Errorf("the code did not return an error")
 		}
 	}
