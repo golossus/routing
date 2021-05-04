@@ -48,3 +48,18 @@ func bySchemas(schemas ...string) (matcher, error) {
 		return nil != leaf, leaf
 	}, nil
 }
+
+func byHeaders(headers map[string]string) (matcher, error) {
+
+	return func(r *http.Request) (bool, *node) {
+		if r == nil || len(headers) > len(r.Header){
+			return false, nil
+		}
+		for key, value := range headers {
+			if r.Header.Get(key) != value{
+				return false, nil
+			}
+		}
+		return true, nil
+	}, nil
+}

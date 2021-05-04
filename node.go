@@ -57,7 +57,7 @@ func (n *node) regexpToString() string {
 func (n *node) hasParameters() bool {
 
 	for _, m := range n.matchers {
-		if _, hostLeaf := m(nil); hostLeaf.hasParameters() {
+		if _, hostLeaf := m(nil); hostLeaf != nil && hostLeaf.hasParameters() {
 			return true
 		}
 	}
