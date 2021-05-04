@@ -634,6 +634,40 @@ func TestRouter_Register_GeneratesValidRouteNames(t *testing.T) {
 	assertRouteIsGenerated(t, mainRouter, "date", "/2020-05-05", map[string]string{"date": "2020-05-05"})
 }
 
+func TestRouter_NewRouter_WithDefaultConfig(t *testing.T) {
+	mainRouter := NewRouter()
+
+	_ = mainRouter.Register(http.MethodGet, "/with/slash", testHandlerFunc, MatchingOptions{Name: "test_name"})
+
+	req, _ := http.NewRequest(http.MethodGet, "/with/slash", nil)
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusOK, getResponse.Code)
+
+	req, _ = http.NewRequest(http.MethodHead, "/with/slash", nil)
+	headResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(headResponse, req)
+	assertEqual(t, http.StatusNotFound, headResponse.Code)
+}
+
+func TestRouter_NewRouter_WithAutoMethodHeadEnabled(t *testing.T) {
+	mainRouter := NewRouter(RouterConfig{
+		EnableAutoMethodHead: true,
+	})
+
+	_ = mainRouter.Register(http.MethodGet, "/with/slash", testHandlerFunc, MatchingOptions{Name: "test_name"})
+
+	req, _ := http.NewRequest(http.MethodGet, "/with/slash", nil)
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusOK, getResponse.Code)
+
+	req, _ = http.NewRequest(http.MethodHead, "/with/slash", nil)
+	headResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(headResponse, req)
+	assertEqual(t, http.StatusOK, headResponse.Code)
+}
+
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
 	bag := URLParameterBag{}
 	for key, value := range params {
@@ -697,6 +731,12 @@ func TestRouter_Load_FailsWhenSchemaIsInvalid(t *testing.T) {
 }
 
 func assertEqual(t *testing.T, expected, value int) {
+	if expected != value {
+		t.Errorf("%v is not equal to %v", expected, value)
+	}
+}
+
+func assertStringEqual(t *testing.T, expected, value string) {
 	if expected != value {
 		t.Errorf("%v is not equal to %v", expected, value)
 	}
