@@ -77,16 +77,25 @@ func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) U
 	return paramsBag
 }
 
+type RouterConfig struct {
+	EnableAutoMethodHead bool
+}
+
 // Router is a structure where all routes are stored
 type Router struct {
+	config RouterConfig
 	trees  map[string]*tree
 	asName string
 	routes map[string]*node
 }
 
 // NewRouter returns an empty Router
-func NewRouter() Router {
-	return Router{}
+func NewRouter(configs ...RouterConfig) Router {
+	var defaultConfig RouterConfig
+	if len(configs) > 0 {
+		defaultConfig = configs[0]
+	}
+	return Router{ config: defaultConfig}
 }
 
 // ServerHTTP executes the HandlerFunc if the request path is found
@@ -212,6 +221,9 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 
 	r.routes[rname] = leaf
 
+	if r.config.EnableAutoMethodHead && verb == http.MethodGet {
+		err = r.Register(http.MethodHead, path, handler, options...)
+	}
 	return nil
 }
 
