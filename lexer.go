@@ -3,7 +3,9 @@ package routing
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -65,6 +67,11 @@ func (l *lexer) scan() token {
 		l.mode = tModeIdentifier
 		return createOpenVarToken()
 	}
+
+	if !isStatic(ch) {
+		panic(fmt.Sprintf("character not allowed detected: %c", ch))
+	}
+
 	_ = l.buf.UnreadRune()
 	return l.scanStatic()
 }
@@ -196,9 +203,7 @@ func isCloseBrace(ch rune) bool {
 }
 
 func isAlpha(ch rune) bool {
-	return (ch >= 'a' && ch <= 'z') ||
-		(ch >= 'A' && ch <= 'Z') ||
-		(ch >= '0' && ch <= '9')
+	return unicode.IsLetter(ch) || unicode.IsDigit(ch)
 }
 func isIdentifierRune(ch rune) bool {
 	return isAlpha(ch) || (ch == '_')
