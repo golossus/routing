@@ -78,7 +78,8 @@ func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) U
 }
 
 type RouterConfig struct {
-	EnableAutoMethodHead bool
+	EnableAutoMethodHead    bool
+	EnableAutoMethodOptions bool
 }
 
 // Router is a structure where all routes are stored
@@ -95,7 +96,7 @@ func NewRouter(configs ...RouterConfig) Router {
 	if len(configs) > 0 {
 		defaultConfig = configs[0]
 	}
-	return Router{ config: defaultConfig}
+	return Router{config: defaultConfig}
 }
 
 // ServerHTTP executes the HandlerFunc if the request path is found
@@ -224,6 +225,11 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 	if r.config.EnableAutoMethodHead && verb == http.MethodGet {
 		err = r.Register(http.MethodHead, path, handler, options...)
 	}
+
+	if r.config.EnableAutoMethodOptions && verb != http.MethodOptions {
+		err = r.Register(http.MethodOptions, path, getAutoMethodOptionsHandler(r), options...)
+	}
+
 	return nil
 }
 
