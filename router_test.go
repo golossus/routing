@@ -710,6 +710,40 @@ func TestRouter_Register_CanOverrideRouteHandler(t *testing.T) {
 	assertStringEqual(t, "dummy", getResponse.Body.String())
 }
 
+func TestRouter_NewRouter_WithMethodNotAllowedResponseEnabled(t *testing.T) {
+	mainRouter := NewRouter(RouterConfig{
+		EnableMethodNotAllowedResponse: true,
+	})
+
+	_ = mainRouter.Register(http.MethodGet, "/some", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodPost, "/some", testDummyHandlerFunc)
+
+	req, _ := http.NewRequest(http.MethodDelete, "/some", nil)
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusMethodNotAllowed, getResponse.Code)
+	assertStringContains(t, "GET", getResponse.Header().Get("Allow"))
+	assertStringContains(t, "POST", getResponse.Header().Get("Allow"))
+
+	req, _ = http.NewRequest(http.MethodDelete, "/another-route", nil)
+	getResponse = httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusNotFound, getResponse.Code)
+}
+
+func TestRouter_NewRouter_WithMethodNotAllowedResponseDisabled(t *testing.T) {
+	mainRouter := NewRouter(RouterConfig{})
+
+	_ = mainRouter.Register(http.MethodGet, "/some", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodPost, "/some", testDummyHandlerFunc)
+
+	req, _ := http.NewRequest(http.MethodDelete, "/some", nil)
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusNotFound, getResponse.Code)
+
+}
+
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
 	bag := URLParameterBag{}
 	for key, value := range params {
