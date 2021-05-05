@@ -238,6 +238,14 @@ func TestRouter_Any(t *testing.T) {
 	assertPathFound(t, router, "TRACE", path)
 }
 
+func TestRouter_Any_ReturnsErrorIfInvalidRoute(t *testing.T) {
+	path := "/path1{"
+
+	router := Router{}
+	err := router.Any(path, testHandlerFunc)
+	assertNotNil(t, err)
+}
+
 func TestGetURLParameters_ReturnsEmptyBagIfNoContextValueExists(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodGet, "/dummy", nil)
 
@@ -354,7 +362,7 @@ func TestRouter_Prefix_CreateTreeWhenStillNotCreated(t *testing.T) {
 	secondRouter := Router{}
 	assertNil(t, mainRouter.trees)
 
-	_ = mainRouter.Prefix("path", &secondRouter)
+	_ = mainRouter.Prefix("/path", &secondRouter)
 
 	assertNotNil(t, mainRouter.trees)
 }
@@ -832,7 +840,7 @@ func TestRouter_Register_ReturnsErrorIfInvalidPath(t *testing.T) {
 func TestRouter_Register_ReturnsErrorIfInvalidBySchemasMatcher(t *testing.T) {
 	mainRouter := NewRouter()
 
-	err := mainRouter.Register(http.MethodGet, "/some{", testHandlerFunc, MatchingOptions{Schemas: []string{"http{"}})
+	err := mainRouter.Register(http.MethodGet, "/some", testHandlerFunc, MatchingOptions{Schemas: []string{"http{"}})
 
 	assertNotNil(t, err)
 }

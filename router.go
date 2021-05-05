@@ -77,6 +77,7 @@ func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) U
 	return paramsBag
 }
 
+// RouterConfig is a structure to set the router configuration
 type RouterConfig struct {
 	EnableAutoMethodHead           bool
 	EnableAutoMethodOptions        bool
@@ -146,6 +147,7 @@ func (r *Router) As(asName string) *Router {
 	return r
 }
 
+// MatchingOptions is a structure to define a route name and extend the matching options
 type MatchingOptions struct {
 	Name        string
 	Host        string
@@ -155,6 +157,7 @@ type MatchingOptions struct {
 	Custom      func(r *http.Request) bool
 }
 
+// NewMatchingOptions returns the MatchingOptions structure
 func NewMatchingOptions() MatchingOptions {
 	return MatchingOptions{
 		Name:        "",
@@ -368,6 +371,7 @@ func (r *Router) Prefix(path string, router *Router) error {
 	return nil
 }
 
+// StaticFiles  will serve files from a directory under a prefix path
 func (r *Router) StaticFiles(prefix, dir string) error {
 	return r.Register("GET", prefix+"/{name:.*}", func(writer http.ResponseWriter, request *http.Request) {
 
@@ -379,6 +383,7 @@ func (r *Router) StaticFiles(prefix, dir string) error {
 	})
 }
 
+// Redirect will redirect a path to an url
 func (r *Router) Redirect(path, url string, code ...int) error {
 	return r.Register(http.MethodGet, path, getRedirectHandler(url, code...))
 }
