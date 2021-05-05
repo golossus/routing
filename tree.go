@@ -123,6 +123,10 @@ func combine(tree1 *node, tree2 *node) *node {
 		tree1.handler = tree2.handler
 	}
 
+	if tree1.child == nil && tree2.child == nil{
+		return tree1
+	}
+
 	tree1.child = combine(tree1.child, tree2.child)
 	tree1.child.parent = tree1
 	return tree1

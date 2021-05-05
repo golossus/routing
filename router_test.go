@@ -668,6 +668,48 @@ func TestRouter_NewRouter_WithAutoMethodHeadEnabled(t *testing.T) {
 	assertEqual(t, http.StatusOK, headResponse.Code)
 }
 
+func TestRouter_NewRouter_WithAutoMethodOptionsEnabled(t *testing.T) {
+	mainRouter := NewRouter(RouterConfig{
+		EnableAutoMethodOptions: true,
+	})
+
+	_ = mainRouter.Register(http.MethodGet, "/some", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodDelete, "/some", testHandlerFunc)
+
+	req, _ := http.NewRequest(http.MethodGet, "/some", nil)
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusOK, getResponse.Code)
+
+	req, _ = http.NewRequest(http.MethodDelete, "/some", nil)
+	deleteResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(deleteResponse, req)
+	assertEqual(t, http.StatusOK, deleteResponse.Code)
+
+	req, _ = http.NewRequest(http.MethodOptions, "/some", nil)
+	optionsResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(optionsResponse, req)
+	assertEqual(t, http.StatusNoContent, optionsResponse.Code)
+	assertStringContains(t, "GET", optionsResponse.Header().Get("Allow"))
+	assertStringContains(t, "DELETE", optionsResponse.Header().Get("Allow"))
+	assertStringContains(t, "OPTIONS", optionsResponse.Header().Get("Allow"))
+}
+
+func TestRouter_Register_CanOverrideRouteHandler(t *testing.T) {
+	mainRouter := NewRouter(RouterConfig{
+		EnableAutoMethodOptions: true,
+	})
+
+	_ = mainRouter.Register(http.MethodGet, "/some", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/some", testDummyHandlerFunc)
+
+	req, _ := http.NewRequest(http.MethodGet, "/some", nil)
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusOK, getResponse.Code)
+	assertStringEqual(t, "dummy", getResponse.Body.String())
+}
+
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
 	bag := URLParameterBag{}
 	for key, value := range params {
@@ -739,5 +781,11 @@ func assertEqual(t *testing.T, expected, value int) {
 func assertStringEqual(t *testing.T, expected, value string) {
 	if expected != value {
 		t.Errorf("%v is not equal to %v", expected, value)
+	}
+}
+
+func assertStringContains(t *testing.T, expected, value string) {
+	if !strings.Contains(value, expected) {
+		t.Errorf("%v does not contain %v", value, expected)
 	}
 }
