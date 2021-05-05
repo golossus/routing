@@ -54,6 +54,13 @@ func Test_byHost_ReturnsErrorWhenMalformedHost(t *testing.T) {
 	assertNotNil(t, err)
 }
 
+func Test_bySchemas_ReturnsErrorWhenInvalidSchemaFormat(t *testing.T) {
+	s := "htt{"
+
+	_, err := bySchemas(s)
+	assertNotNil(t, err)
+}
+
 func Test_byHeaders_ReturnsFalseWhenInsufficientHeaders(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/", nil)
 
@@ -61,7 +68,7 @@ func Test_byHeaders_ReturnsFalseWhenInsufficientHeaders(t *testing.T) {
 		"key1": "value1",
 	}
 
-	m, _ := byHeaders(headers)
+	m := byHeaders(headers)
 	matches, _ := m(req)
 	assertFalse(t, matches)
 }
@@ -75,7 +82,7 @@ func Test_byHeaders_ReturnsFalseWhenHeaderDoNotMach(t *testing.T) {
 		"key2": "value2",
 	}
 
-	m, _ := byHeaders(headers)
+	m := byHeaders(headers)
 	matches, _ := m(req)
 	assertFalse(t, matches)
 }
@@ -89,31 +96,31 @@ func Test_byHeaders_ReturnsTrueWhenHeadersMatch(t *testing.T) {
 		"key2": "value2",
 	}
 
-	m, _ := byHeaders(headers)
+	m := byHeaders(headers)
 	matches, _ := m(req)
 	assertTrue(t, matches)
 }
 
-func Test_byHeaders_ReturnsFalseWhenInsufficientQueryParams(t *testing.T) {
+func Test_byQueryParameters_ReturnsFalseWhenInsufficientQueryParams(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/", nil)
 
 	params := map[string]string{
 		"key1": "value1",
 	}
 
-	m, _ := byQueryParameters(params)
+	m := byQueryParameters(params)
 	matches, _ := m(req)
 	assertFalse(t, matches)
 }
 
-func Test_byHeaders_ReturnsFalseWhenQueryParamsDoNotMach(t *testing.T) {
+func Test_byQueryParameters_ReturnsFalseWhenQueryParamsDoNotMach(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/?key1=value1&key2=invalid", nil)
 	params := map[string]string{
 		"key1": "value1",
 		"key2": "value2",
 	}
 
-	m, _ := byQueryParameters(params)
+	m := byQueryParameters(params)
 	matches, _ := m(req)
 	assertFalse(t, matches)
 }
@@ -125,7 +132,7 @@ func Test_byQueryParameters_ReturnsTrueWhenQueryParamsMatch(t *testing.T) {
 		"key2": "value2",
 	}
 
-	m, _ := byQueryParameters(params)
+	m := byQueryParameters(params)
 	matches, _ := m(req)
 	assertTrue(t, matches)
 }
@@ -141,11 +148,11 @@ func Test_byCustomMatcher_UsesCustomFunction(t *testing.T) {
 		return false
 	}
 
-	m, _ := byCustomMatcher(matcherTrue)
+	m := byCustomMatcher(matcherTrue)
 	matches, _ := m(req)
 	assertTrue(t, matches)
 
-	m, _ = byCustomMatcher(matcherFalse)
+	m = byCustomMatcher(matcherFalse)
 	matches, _ = m(req)
 	assertFalse(t, matches)
 }
