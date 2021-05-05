@@ -20,7 +20,7 @@ func getRedirectHandler(url string, code ...int) http.HandlerFunc {
 	if len(code) > 0 && code[0] >= http.StatusMultipleChoices && code[0] <= http.StatusPermanentRedirect {
 		defaultCode = code[0]
 	}
-	return func(writer http.ResponseWriter, request *http.Request, ) {
+	return func(writer http.ResponseWriter, request *http.Request) {
 		http.Redirect(writer, request, url, defaultCode)
 	}
 }
