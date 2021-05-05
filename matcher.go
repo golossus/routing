@@ -49,7 +49,7 @@ func bySchemas(schemas ...string) (matcher, error) {
 	}, nil
 }
 
-func byHeaders(headers map[string]string) (matcher, error) {
+func byHeaders(headers map[string]string) matcher {
 
 	return func(r *http.Request) (bool, *node) {
 		if r == nil || len(headers) > len(r.Header) {
@@ -61,10 +61,10 @@ func byHeaders(headers map[string]string) (matcher, error) {
 			}
 		}
 		return true, nil
-	}, nil
+	}
 }
 
-func byQueryParameters(params map[string]string) (matcher, error) {
+func byQueryParameters(params map[string]string) matcher {
 
 	return func(r *http.Request) (bool, *node) {
 		if r == nil || len(params) > len(r.URL.Query()) {
@@ -76,10 +76,10 @@ func byQueryParameters(params map[string]string) (matcher, error) {
 			}
 		}
 		return true, nil
-	}, nil
+	}
 }
 
-func byCustomMatcher(custom func(r *http.Request) bool) (matcher, error) {
+func byCustomMatcher(custom func(r *http.Request) bool) matcher {
 
 	return func(r *http.Request) (bool, *node) {
 		if r == nil {
@@ -87,5 +87,5 @@ func byCustomMatcher(custom func(r *http.Request) bool) (matcher, error) {
 		}
 
 		return custom(r), nil
-	}, nil
+	}
 }

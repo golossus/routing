@@ -205,6 +205,16 @@ func TestTree_Insert_PrioritisesStaticPaths(t *testing.T) {
 	assertNodeDynamic(t, tree.root.child.sibling.sibling, "name", "", true, tree.root)
 }
 
+func TestCreateTreeFromChunks_ReturnsNilIfEmptyChunks(t *testing.T) {
+
+	chunks := []chunk{}
+
+	root, leaf := createTreeFromChunks(chunks)
+
+	assertNil(t, root)
+	assertNil(t, leaf)
+}
+
 func TestCreateTreeFromChunks(t *testing.T) {
 
 	chunks := []chunk{

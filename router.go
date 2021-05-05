@@ -211,26 +211,17 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 		}
 
 		if len(options[0].Headers) > 0 {
-			matcherByHeaders, err := byHeaders(options[0].Headers)
-			if err != nil {
-				return err
-			}
+			matcherByHeaders := byHeaders(options[0].Headers)
 			leaf.matchers = append(leaf.matchers, matcherByHeaders)
 		}
 
 		if len(options[0].QueryParams) > 0 {
-			matcherByQueryParams, err := byQueryParameters(options[0].QueryParams)
-			if err != nil {
-				return err
-			}
+			matcherByQueryParams := byQueryParameters(options[0].QueryParams)
 			leaf.matchers = append(leaf.matchers, matcherByQueryParams)
 		}
 
 		if options[0].Custom != nil {
-			matcherByCustomFunc, err := byCustomMatcher(options[0].Custom)
-			if err != nil {
-				return err
-			}
+			matcherByCustomFunc := byCustomMatcher(options[0].Custom)
 			leaf.matchers = append(leaf.matchers, matcherByCustomFunc)
 		}
 	}
@@ -381,11 +372,7 @@ func (r *Router) StaticFiles(prefix, dir string) error {
 	return r.Register("GET", prefix+"/{name:.*}", func(writer http.ResponseWriter, request *http.Request) {
 
 		urlParams := GetURLParameters(request)
-		name, err := urlParams.GetByName("name")
-		if err != nil {
-			writer.WriteHeader(404)
-			return
-		}
+		name, _ := urlParams.GetByName("name")
 
 		request.URL.Path = name
 		http.FileServer(http.Dir(dir)).ServeHTTP(writer, request)

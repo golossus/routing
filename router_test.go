@@ -221,6 +221,23 @@ func TestRouter_AllVerbs(t *testing.T) {
 	assertPathFound(t, router, "TRACE", path)
 }
 
+func TestRouter_Any(t *testing.T) {
+	path := "/path1"
+
+	router := Router{}
+	_ = router.Any(path, testHandlerFunc)
+
+	assertPathFound(t, router, "GET", path)
+	assertPathFound(t, router, "HEAD", path)
+	assertPathFound(t, router, "POST", path)
+	assertPathFound(t, router, "PUT", path)
+	assertPathFound(t, router, "PATCH", path)
+	assertPathFound(t, router, "DELETE", path)
+	assertPathFound(t, router, "CONNECT", path)
+	assertPathFound(t, router, "OPTIONS", path)
+	assertPathFound(t, router, "TRACE", path)
+}
+
 func TestGetURLParameters_ReturnsEmptyBagIfNoContextValueExists(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodGet, "/dummy", nil)
 
@@ -322,6 +339,24 @@ func TestRouter_As_AssignsRouteNames(t *testing.T) {
 
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/account", "users.account")
 	assertRouteNameHasHandler(t, mainRouter, http.MethodGet, "/api/users/profile", "users.profile")
+}
+
+func TestRouter_Prefix_ReturnsErrorIfInvalidPath(t *testing.T) {
+	mainRouter := Router{}
+	secondRouter := Router{}
+
+	err := mainRouter.Prefix("path{", &secondRouter)
+	assertNotNil(t, err)
+}
+
+func TestRouter_Prefix_CreateTreeWhenStillNotCreated(t *testing.T) {
+	mainRouter := Router{}
+	secondRouter := Router{}
+	assertNil(t, mainRouter.trees)
+
+	_ = mainRouter.Prefix("path", &secondRouter)
+
+	assertNotNil(t, mainRouter.trees)
 }
 
 func TestRouter_MatchingOptions_AssignsRouteNames(t *testing.T) {
@@ -591,6 +626,62 @@ func TestRouter_GenerateURL_GenerateValidRoutes(t *testing.T) {
 	assertRouteIsGenerated(t, mainRouter, "date_1", "/posts/10/2020-05-05", map[string]string{"id": "10", "date": "2020-05-05"})
 }
 
+func TestRouter_GenerateURL_ReturnsErrorWhenRouteNameNotFound(t *testing.T) {
+	mainRouter := Router{}
+	url := "/path1"
+	name := "name1"
+	_ = mainRouter.Register(http.MethodGet, url, testHandlerFunc, MatchingOptions{
+		Name: name,
+	})
+
+	bag := URLParameterBag{}
+	route, err := mainRouter.GenerateURL("path2", bag)
+	if err == nil {
+		t.Errorf("route %s is generated", name)
+	}
+	if route == url {
+		t.Errorf("route %s is valid", url)
+	}
+}
+
+func TestRouter_GenerateURL_ReturnsErrorWhenParamNameNotFound(t *testing.T) {
+	mainRouter := Router{}
+	url := "/path1/{name:[a-z]+}/path2"
+	name := "path1"
+	_ = mainRouter.Register(http.MethodGet, url, testHandlerFunc, MatchingOptions{
+		Name: name,
+	})
+
+	bag := URLParameterBag{}
+	bag.add("id", "john")
+	route, err := mainRouter.GenerateURL(name, bag)
+	if err == nil {
+		t.Errorf("route %s is generated", name)
+	}
+	if route == url {
+		t.Errorf("route %s is valid", url)
+	}
+}
+
+func TestRouter_GenerateURL_ReturnsErrorWhenRegularExpressionNotMatches(t *testing.T) {
+	mainRouter := Router{}
+	url := "/path1/{name:[a-z]+}"
+	name := "path1"
+	_ = mainRouter.Register(http.MethodGet, url, testHandlerFunc, MatchingOptions{
+		Name: name,
+	})
+
+	bag := URLParameterBag{}
+	bag.add("name", "1234")
+	route, err := mainRouter.GenerateURL(name, bag)
+	if err == nil {
+		t.Errorf("route %s is generated", name)
+	}
+	if route == url {
+		t.Errorf("route %s is valid", url)
+	}
+}
+
 func TestRouter_StaticFiles_ServerStaticFileFromDir(t *testing.T) {
 	mainRouter := Router{}
 
@@ -632,6 +723,26 @@ func TestRouter_Register_GeneratesValidRouteNames(t *testing.T) {
 	assertRouteIsGenerated(t, mainRouter, "path1_id_name", "/path1/100/abc", map[string]string{"id": "100", "name": "abc"})
 	assertRouteIsGenerated(t, mainRouter, "path_1", "/path1/100/2098939/image.jpg", map[string]string{"file": "100/2098939/image.jpg"})
 	assertRouteIsGenerated(t, mainRouter, "date", "/2020-05-05", map[string]string{"date": "2020-05-05"})
+}
+
+func TestRouter_PrioritizeByWeight_StillMatchesRoutes(t *testing.T) {
+	mainRouter := Router{}
+
+	_ = mainRouter.Register(http.MethodGet, "/", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/with/slash", testHandlerFunc, MatchingOptions{Name: "/w/s"})
+	_ = mainRouter.Register(http.MethodGet, "/path1", testHandlerFunc, MatchingOptions{Name: "path"})
+	_ = mainRouter.Register(http.MethodGet, "/path1/{id}/{name:[a-z]{1,5}}", testHandlerFunc)
+	_ = mainRouter.Register(http.MethodGet, "/path1/{file:.*}", testHandlerFunc, MatchingOptions{Name: "path"})
+	_ = mainRouter.Register(http.MethodGet, "/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}", testHandlerFunc)
+
+	mainRouter.PrioritizeByWeight()
+
+	assertPathFound(t, mainRouter, "GET", "/")
+	assertPathFound(t, mainRouter, "GET", "/with/slash")
+	assertPathFound(t, mainRouter, "GET", "/path1")
+	assertPathFound(t, mainRouter, "GET", "/path1/1/name")
+	assertPathFound(t, mainRouter, "GET", "/path1/some/path/to/file")
+	assertPathFound(t, mainRouter, "GET", "/2021-01-31")
 }
 
 func TestRouter_NewRouter_WithDefaultConfig(t *testing.T) {
@@ -708,6 +819,22 @@ func TestRouter_Register_CanOverrideRouteHandler(t *testing.T) {
 	mainRouter.ServeHTTP(getResponse, req)
 	assertEqual(t, http.StatusOK, getResponse.Code)
 	assertStringEqual(t, "dummy", getResponse.Body.String())
+}
+
+func TestRouter_Register_ReturnsErrorIfInvalidPath(t *testing.T) {
+	mainRouter := NewRouter()
+
+	err := mainRouter.Register(http.MethodGet, "/some{", testHandlerFunc)
+
+	assertNotNil(t, err)
+}
+
+func TestRouter_Register_ReturnsErrorIfInvalidBySchemasMatcher(t *testing.T) {
+	mainRouter := NewRouter()
+
+	err := mainRouter.Register(http.MethodGet, "/some{", testHandlerFunc, MatchingOptions{Schemas: []string{"http{"}})
+
+	assertNotNil(t, err)
 }
 
 func TestRouter_NewRouter_WithMethodNotAllowedResponseEnabled(t *testing.T) {
@@ -849,6 +976,18 @@ func TestRouter_Load_FailsWhenSchemaIsInvalid(t *testing.T) {
 	if err == nil {
 		t.Errorf("invalid Schema %s has been loaded", "users")
 	}
+}
+
+
+func TestRouter_Load_FailsWhenRouteIsInvalid(t *testing.T) {
+	AddHandler(testHandlerFunc, "users.Handler")
+
+	router := NewRouter()
+	loader := sliceLoader{
+		RouteDef{Name: "get.users", Method: "GET", Schema: "/users{", Handler: "users.Handler"},
+	}
+	err := router.Load(&loader)
+	assertNotNil(t, err)
 }
 
 func assertEqual(t *testing.T, expected, value int) {
