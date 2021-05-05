@@ -78,8 +78,9 @@ func buildURLParameters(leaf *node, path string, offset int, paramsCount uint) U
 }
 
 type RouterConfig struct {
-	EnableAutoMethodHead    bool
-	EnableAutoMethodOptions bool
+	EnableAutoMethodHead           bool
+	EnableAutoMethodOptions        bool
+	EnableMethodNotAllowedResponse bool
 }
 
 // Router is a structure where all routes are stored
@@ -103,13 +104,13 @@ func NewRouter(configs ...RouterConfig) Router {
 func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	tree, ok := r.trees[request.Method]
 	if !ok {
-		http.NotFound(response, request)
+		r.notFoundOrMethodNotAllowed(response, request)
 		return
 	}
 
 	leaf := tree.find(request)
 	if leaf == nil {
-		http.NotFound(response, request)
+		r.notFoundOrMethodNotAllowed(response, request)
 		return
 	}
 
@@ -118,6 +119,22 @@ func (r *Router) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 		request = request.WithContext(context.WithValue(ctx, ctxKey, leaf))
 	}
 	leaf.handler(response, request)
+}
+
+func (r *Router) notFoundOrMethodNotAllowed(response http.ResponseWriter, request *http.Request) {
+	if !r.config.EnableMethodNotAllowedResponse {
+		http.NotFound(response, request)
+		return
+	}
+
+	availVerbs := getAvailableMethods(r, request)
+	if len(availVerbs) == 0 {
+		http.NotFound(response, request)
+		return
+	}
+
+	response.Header().Set("Allow", strings.Join(availVerbs, ", "))
+	http.Error(response, "405 method not allowed", http.StatusMethodNotAllowed)
 }
 
 // As method sets a name for the next registered route.
