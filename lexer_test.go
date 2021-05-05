@@ -28,6 +28,30 @@ func TestLexer_ScanAll_SimplePath(t *testing.T) {
 	validateTokens(expectedTokens, tokens, t)
 }
 
+func TestLexer_ScanAll_SimplePathWithUnicodeChars(t *testing.T) {
+	lexer := newLexer("/españa")
+
+	tokens := lexer.scanAll()
+	expectedTokens := []token{
+		{v: "/", t: tSlash},
+		{v: "españa", t: tStatic},
+		{v: "", t: tEnd},
+	}
+	validateTokens(expectedTokens, tokens, t)
+}
+
+func TestLexer_ScanAll_SimplePathWithNotAllowedCharsFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("lexes did not panic with invalid char")
+		}
+	}()
+
+	lexer := newLexer("/invalid#")
+
+	lexer.scanAll()
+}
+
 func TestLexer_ScanAll_DoubleStatic(t *testing.T) {
 	lexer := newLexer("/path1/path2")
 
