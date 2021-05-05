@@ -392,6 +392,10 @@ func (r *Router) StaticFiles(prefix, dir string) error {
 	})
 }
 
+func (r *Router) Redirect(path, url string, code ...int) error {
+	return r.Register(http.MethodGet, path, getRedirectHandler(url, code...))
+}
+
 // GenerateURL generates a URL from route name
 func (r *Router) GenerateURL(name string, params URLParameterBag) (string, error) {
 	node, ok := r.routes[name]

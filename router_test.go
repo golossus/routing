@@ -744,6 +744,51 @@ func TestRouter_NewRouter_WithMethodNotAllowedResponseDisabled(t *testing.T) {
 
 }
 
+func TestRouter_Redirect_RegistersInternalRedirections(t *testing.T) {
+	mainRouter := NewRouter()
+
+	_ = mainRouter.Redirect("/from", "/to", http.StatusMovedPermanently)
+
+	req, _ := http.NewRequest(http.MethodGet, "/from", nil)
+
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusMovedPermanently, getResponse.Code)
+	assertStringContains(t, "/to", getResponse.Header().Get("Location"))
+}
+
+func TestRouter_Redirect_RegistersExternalRedirections(t *testing.T) {
+	mainRouter := NewRouter()
+
+	_ = mainRouter.Redirect("/from", "https://google.com")
+
+	req, _ := http.NewRequest(http.MethodGet, "/from", nil)
+
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusFound, getResponse.Code)
+	assertStringContains(t, "https://google.com", getResponse.Header().Get("Location"))
+}
+
+func TestRouter_Redirect_SetsDefaultCodeForNot3xx(t *testing.T) {
+	mainRouter := NewRouter()
+
+	_ = mainRouter.Redirect("/from", "https://google.com", http.StatusOK)
+	_ = mainRouter.Redirect("/from2", "https://google2.com", http.StatusNotFound)
+
+	req, _ := http.NewRequest(http.MethodGet, "/from", nil)
+	getResponse := httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusFound, getResponse.Code)
+	assertStringContains(t, "https://google.com", getResponse.Header().Get("Location"))
+
+	req, _ = http.NewRequest(http.MethodGet, "/from2", nil)
+	getResponse = httptest.NewRecorder()
+	mainRouter.ServeHTTP(getResponse, req)
+	assertEqual(t, http.StatusFound, getResponse.Code)
+	assertStringContains(t, "https://google2.com", getResponse.Header().Get("Location"))
+}
+
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
 	bag := URLParameterBag{}
 	for key, value := range params {
