@@ -1,5 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/golossus/routing)](https://goreportcard.com/report/github.com/golossus/routing) 
 [![Build Status](https://travis-ci.com/golossus/routing.svg?branch=master)](https://travis-ci.com/golossus/routing)
+[![codecov](https://codecov.io/gh/golossus/routing/branch/master/graph/badge.svg?token=R4RDS0JM4X)](https://codecov.io/gh/golossus/routing)
 
 <p align="center">
     <a href="https://www.golossus.com" target="_blank">
