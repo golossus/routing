@@ -839,6 +839,14 @@ func TestRouter_Register_ReturnsErrorIfInvalidPath(t *testing.T) {
 	assertNotNil(t, err)
 }
 
+func TestRouter_Register_ReturnsErrorIfInvalidVerb(t *testing.T) {
+	mainRouter := NewRouter()
+
+	err := mainRouter.Register("", "/some", testHandlerFunc)
+
+	assertNotNil(t, err)
+}
+
 func TestRouter_Register_ReturnsErrorIfInvalidBySchemasMatcher(t *testing.T) {
 	mainRouter := NewRouter()
 

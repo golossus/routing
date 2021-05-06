@@ -3,7 +3,7 @@
     {
       "name": "post.users",
       "method": "POST",
-      "schema": "/users",
+      "path": "/users",
       "handler": "post.users.handler"
     }
   ]

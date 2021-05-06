@@ -14,9 +14,14 @@ type JsonRoutes struct {
 // JsonRoute defines a route json schema
 type JsonRoute struct {
 	Name    string `json:"name"`
-	Schema  string `json:"schema"`
 	Method  string `json:"method"`
+	Path  string `json:"path"`
+	Host string `json:"host"`
 	Handler string `json:"handler"`
+	Schemas []string `json:"schemas"`
+	Headers map[string]string `json:"headers"`
+	QueryParams map[string]string `json:"queryParams"`
+	CustomMatcher string `json:"customMatcher"`
 }
 
 // JsonFileLoader type loads routes from Json files
@@ -48,9 +53,16 @@ func (l *JsonFileLoader) FromFile(files ...string) error {
 		for _, r := range rs.Routes {
 			fileRoutes = append(fileRoutes, routing.RouteDef{
 				Method:  r.Method,
-				Schema:  r.Schema,
+				Path:  r.Path,
 				Handler: r.Handler,
-				Name:    r.Name,
+				Options:  routing.RouteDefOptions{
+					Name: r.Name,
+					Host: r.Host,
+					Schemas: r.Schemas,
+					Headers: r.Headers,
+					QueryParams: r.QueryParams,
+					CustomMatcher: r.CustomMatcher,
+				},
 			})
 		}
 
