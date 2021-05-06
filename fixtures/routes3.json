@@ -1,0 +1,22 @@
+{
+  "routes": [
+    {
+      "name": "put.users",
+      "method": "PUT",
+      "path": "/users",
+      "handler": "put.users.handler",
+      "host": "my.domain.com",
+      "schemas": [
+        "http",
+        "https"
+      ],
+      "headers": {
+        "X-Dummy": "dummy"
+      },
+      "queryParams": {
+        "offset": "2"
+      },
+      "customMatcher": ""
+    }
+  ]
+}

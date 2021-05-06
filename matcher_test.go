@@ -54,8 +54,62 @@ func Test_byHost_ReturnsErrorWhenMalformedHost(t *testing.T) {
 	assertNotNil(t, err)
 }
 
+func Test_bySchemas_WithValidStaticSchemas(t *testing.T) {
+	httpReq, _ := http.NewRequest("GET", "/", nil)
+	httpReq.URL.Scheme = "http"
+
+	httpsReq, _ := http.NewRequest("GET", "/", nil)
+	httpsReq.URL.Scheme = "https"
+
+	ftpReq, _ := http.NewRequest("GET", "/", nil)
+	ftpReq.URL.Scheme = "ftp"
+
+	m, err := bySchemas("http", "https")
+	assertNotNil(t, m)
+	assertNil(t, err)
+
+	matches, leaf := m(httpReq)
+	assertTrue(t, matches)
+	assertFalse(t, leaf.hasParameters())
+
+	matches, leaf = m(httpsReq)
+	assertTrue(t, matches)
+	assertFalse(t, leaf.hasParameters())
+
+	matches, leaf = m(ftpReq)
+	assertFalse(t, matches)
+	assertNil(t, leaf)
+}
+
+func Test_bySchemas_WithValidDynamicSchemas(t *testing.T) {
+	httpReq, _ := http.NewRequest("GET", "/", nil)
+	httpReq.URL.Scheme = "http"
+
+	httpsReq, _ := http.NewRequest("GET", "/", nil)
+	httpsReq.URL.Scheme = "https"
+
+	ftpReq, _ := http.NewRequest("GET", "/", nil)
+	ftpReq.URL.Scheme = "ftp"
+
+	m, err := bySchemas("htt{_:ps?}")
+	assertNotNil(t, m)
+	assertNil(t, err)
+
+	matches, leaf := m(httpReq)
+	assertTrue(t, matches)
+	assertTrue(t, leaf.hasParameters())
+
+	matches, leaf = m(httpsReq)
+	assertTrue(t, matches)
+	assertTrue(t, leaf.hasParameters())
+
+	matches, leaf = m(ftpReq)
+	assertFalse(t, matches)
+	assertNil(t, leaf)
+}
+
 func Test_bySchemas_ReturnsErrorWhenInvalidSchemaFormat(t *testing.T) {
-	s := "htt{"
+	s := "http:"
 
 	_, err := bySchemas(s)
 	assertNotNil(t, err)
@@ -170,10 +224,22 @@ func assertFalse(t *testing.T, value bool) {
 }
 
 func assertNil(t *testing.T, value interface{}) {
-	reflectedValue := reflect.ValueOf(value)
-	if !reflectedValue.IsNil() {
-		t.Errorf("%v is not nil", value)
+
+	if value == nil {
+		return
 	}
+
+	reflectedValue := reflect.ValueOf(value)
+	switch reflectedValue.Kind() {
+	case reflect.Chan, reflect.Func,
+		reflect.Interface, reflect.Map,
+		reflect.Ptr, reflect.Slice:
+		if reflectedValue.IsNil() {
+			return
+		}
+	}
+
+	t.Errorf("%v is not nil", value)
 }
 
 func assertNotNil(t *testing.T, value interface{}) {

@@ -17,6 +17,8 @@ var testDummyHandlerFunc = func(response http.ResponseWriter, request *http.Requ
 	_, _ = fmt.Fprint(response, "dummy")
 }
 
+var testCustomMatcher = func(r *http.Request) bool { return true }
+
 func assertPathFound(t *testing.T, router Router, method, path string) {
 	r, _ := http.NewRequest(method, path, nil)
 	w := httptest.NewRecorder()
@@ -837,6 +839,14 @@ func TestRouter_Register_ReturnsErrorIfInvalidPath(t *testing.T) {
 	assertNotNil(t, err)
 }
 
+func TestRouter_Register_ReturnsErrorIfInvalidVerb(t *testing.T) {
+	mainRouter := NewRouter()
+
+	err := mainRouter.Register("", "/some", testHandlerFunc)
+
+	assertNotNil(t, err)
+}
+
 func TestRouter_Register_ReturnsErrorIfInvalidBySchemasMatcher(t *testing.T) {
 	mainRouter := NewRouter()
 
@@ -941,58 +951,100 @@ func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, p
 type sliceLoader []RouteDef
 
 func (l *sliceLoader) Load() []RouteDef {
-	var x []RouteDef = *l
-	return x
+	return *l
 }
 
 func TestRouter_Load_RegisterRoutes(t *testing.T) {
 	AddHandler(testHandlerFunc, "users.Handler")
+	AddCustomMatcher(testCustomMatcher, "true.CustomMatcher")
 
 	router := NewRouter()
 	loader := sliceLoader{
-		RouteDef{Name: "get.users", Method: "GET", Schema: "/users", Handler: "users.Handler"},
+		RouteDef{
+			Method:  "GET",
+			Path:    "/users",
+			Handler: "users.Handler",
+			Options: RouteDefOptions{
+				Name: "get.users",
+				CustomMatcher: "true.CustomMatcher",
+			},
+		},
 	}
 	err := router.Load(&loader)
-	if err != nil {
-		t.Error(err)
-	}
+
+	assertNil(t, err)
 	assertRouteIsGenerated(t, router, "get.users", "/users", nil)
 	assertPathFound(t, router, "GET", "/users")
 }
 
-func TestRouter_Load_FailsWhenHandlerNoExists(t *testing.T) {
+func TestRouter_Load_FailsWhenCustomMatcherDoesNotExist(t *testing.T) {
 	AddHandler(testHandlerFunc, "users.Handler")
 
 	router := NewRouter()
 	loader := sliceLoader{
-		RouteDef{Name: "get.users", Method: "GET", Schema: "/users", Handler: "users.Handler.no.exists"},
+		RouteDef{
+			Method:  "GET",
+			Path:    "/users",
+			Handler: "users.Handler",
+			Options: RouteDefOptions{
+				Name: "get.users",
+				CustomMatcher: "notExists.CustomMatcher",
+			},
+		},
 	}
 	err := router.Load(&loader)
-	if err == nil {
-		t.Errorf("no registered Handler %s has been loaded", "users.Handler.no.exists")
-	}
+	assertNotNil(t, err)
 }
 
-func TestRouter_Load_FailsWhenSchemaIsInvalid(t *testing.T) {
+func TestRouter_Load_FailsWhenHandlerDoesNotExist(t *testing.T) {
 	AddHandler(testHandlerFunc, "users.Handler")
 
 	router := NewRouter()
 	loader := sliceLoader{
-		RouteDef{Name: "get.users", Method: "GET", Schema: "users", Handler: "users.Handler.no.exists"},
+		RouteDef{
+			Method:  "GET",
+			Path:    "/users",
+			Handler: "users.Handler.no.exists",
+			Options: RouteDefOptions{
+				Name: "get.users",
+			},
+		},
 	}
 	err := router.Load(&loader)
-	if err == nil {
-		t.Errorf("invalid Schema %s has been loaded", "users")
-	}
+	assertNotNil(t, err)
 }
 
-
-func TestRouter_Load_FailsWhenRouteIsInvalid(t *testing.T) {
+func TestRouter_Load_FailsWhenPathIsInvalid(t *testing.T) {
 	AddHandler(testHandlerFunc, "users.Handler")
 
 	router := NewRouter()
 	loader := sliceLoader{
-		RouteDef{Name: "get.users", Method: "GET", Schema: "/users{", Handler: "users.Handler"},
+		RouteDef{
+			Method:  "GET",
+			Path:    "users",
+			Handler: "users.Handler.no.exists",
+			Options: RouteDefOptions{
+				Name: "get.users",
+			},
+		},
+	}
+	err := router.Load(&loader)
+	assertNotNil(t, err)
+}
+
+func TestRouter_Load_FailsWhenMethodIsInvalid(t *testing.T) {
+	AddHandler(testHandlerFunc, "users.Handler")
+
+	router := NewRouter()
+	loader := sliceLoader{
+		RouteDef{
+			Method:  "ME",
+			Path:    "/users",
+			Handler: "users.Handler.no.exists",
+			Options: RouteDefOptions{
+				Name: "get.users",
+			},
+		},
 	}
 	err := router.Load(&loader)
 	assertNotNil(t, err)

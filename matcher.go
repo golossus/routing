@@ -7,6 +7,10 @@ import (
 
 type matcher func(r *http.Request) (bool, *node)
 
+// CustomMatcher defines the type of a custom function to match against an http
+// request and allow a route to be found or not in the Router
+type CustomMatcher func(r *http.Request) bool
+
 func byHost(host string) (matcher, error) {
 	parser := newParser("/" + strings.ToLower(host))
 	_, err := parser.parse()

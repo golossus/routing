@@ -3,7 +3,7 @@
     {
       "name": "get.users",
       "method": "GET",
-      "schema": "/users",
+      "path": "/users",
       "handler": "get.users.handler"
     }
   ]
