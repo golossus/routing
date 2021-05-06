@@ -37,6 +37,30 @@ func GetHandler(name string) (http.HandlerFunc, error) {
 	return handler, nil
 }
 
+var matchers = make(map[string]CustomMatcher)
+
+// AddCustomMatcher adds a customer route matcher into a list of matchers to be
+// retrieved by name (canonical or alias) on runtime
+func AddCustomMatcher(m CustomMatcher, aliases ...string) {
+	name := runtime.FuncForPC(reflect.ValueOf(m).Pointer()).Name()
+	matchers[strings.TrimRight(name, "-fm")] = m
+
+	for _, alias := range aliases {
+		matchers[alias] = m
+	}
+}
+
+// GetCustomMatcher retrieves a custom matcher given a name from the list of matchers
+func GetCustomMatcher(name string) (CustomMatcher, error) {
+	m, ok := matchers[name]
+	if !ok {
+		return nil, fmt.Errorf("custom matcher with name %s not registered", name)
+	}
+
+	return m, nil
+}
+
+
 // GetURLParameters is in charge of retrieve dynamic parameter of the URL within your route.
 // For example, User's ID in /users/{userId}
 func GetURLParameters(request *http.Request) URLParameterBag {
@@ -154,7 +178,7 @@ type MatchingOptions struct {
 	Schemas     []string
 	Headers     map[string]string
 	QueryParams map[string]string
-	Custom      func(r *http.Request) bool
+	Custom      CustomMatcher
 }
 
 // NewMatchingOptions returns the MatchingOptions structure
@@ -171,6 +195,10 @@ func NewMatchingOptions() MatchingOptions {
 
 // Register adds a new route in the router
 func (r *Router) Register(verb, path string, handler http.HandlerFunc, options ...MatchingOptions) error {
+	if len(verb) < 3 {
+		return fmt.Errorf("invalid verb %s", verb)
+	}
+
 	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
@@ -431,12 +459,22 @@ func getUri(node *node, url *strings.Builder, params URLParameterBag) error {
 	return nil
 }
 
-// RouteDef defines a route definition
+// RouteDef represents a route definition
 type RouteDef struct {
 	Method  string
-	Schema  string
+	Path    string
 	Handler string
-	Name    string
+	Options RouteDefOptions
+}
+
+// RouteDefOptions represents a route definition extra options
+type RouteDefOptions struct {
+	Name          string
+	Host          string
+	Schemas       []string
+	Headers       map[string]string
+	QueryParams   map[string]string
+	CustomMatcher string
 }
 
 // Loader loads a list routes
@@ -451,10 +489,24 @@ func (r *Router) Load(loader Loader) error {
 		if err != nil {
 			return err
 		}
-		if route.Name != "" {
-			r.As(route.Name)
+
+		var matcher CustomMatcher
+		if len(route.Options.CustomMatcher) > 0 {
+			matcher, err = GetCustomMatcher(route.Options.CustomMatcher)
+			if err != nil {
+				return err
+			}
 		}
-		err = r.Register(route.Method, route.Schema, handler)
+
+		options := MatchingOptions{
+			Name:        route.Options.Name,
+			Host:        route.Options.Host,
+			Schemas:     route.Options.Schemas,
+			Headers:     route.Options.Headers,
+			QueryParams: route.Options.QueryParams,
+			Custom:      matcher,
+		}
+		err = r.Register(route.Method, route.Path, handler, options)
 		if err != nil {
 			return err
 		}
