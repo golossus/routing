@@ -24,7 +24,7 @@ func (s *MiddlewarePipe) Pipe(pipe *MiddlewarePipe) {
 }
 
 func (s *MiddlewarePipe) Then(next http.HandlerFunc) http.HandlerFunc {
-	for j := len(s.middlewares)-1; j >= 0; j-- {
+	for j := len(s.middlewares) - 1; j >= 0; j-- {
 		next = s.middlewares[j](next)
 	}
 

@@ -60,7 +60,6 @@ func GetCustomMatcher(name string) (CustomMatcher, error) {
 	return m, nil
 }
 
-
 // GetURLParameters is in charge of retrieve dynamic parameter of the URL within your route.
 // For example, User's ID in /users/{userId}
 func GetURLParameters(request *http.Request) URLParameterBag {
@@ -199,6 +198,10 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 		return fmt.Errorf("invalid verb %s", verb)
 	}
 
+	if handler == nil {
+		return fmt.Errorf("handler can not be nil")
+	}
+
 	parser := newParser(path)
 	_, err := parser.parse()
 	if err != nil {
@@ -292,6 +295,11 @@ func (r *Router) generateRouteName(baseName string, parser *parser) string {
 	}
 
 	return existsName
+}
+
+// NewRoute is a method to register a route in the router through a builder interface.
+func (r *Router) NewRoute() *routeBuilder {
+	return &routeBuilder{r, route{options: MatchingOptions{}}}
 }
 
 // Head is a method to register a new HEAD route in the router.
