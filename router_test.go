@@ -934,6 +934,99 @@ func TestRouter_Redirect_SetsDefaultCodeForNot3xx(t *testing.T) {
 	assertStringContains(t, "https://google2.com", getResponse.Header().Get("Location"))
 }
 
+func TestRouter_NewRoute_RegistersComplexRoutes(t *testing.T) {
+	mainRouter := Router{}
+
+	rb := mainRouter.NewRoute()
+	rb.Method("GET").Path("/users").Handler(testHandlerFunc)
+	rb.Name("users")
+	rb.Host("domain.com")
+	rb.Schemas("https")
+	rb.Header("X-dummy", "dummy")
+	rb.QueryParam("offset", "2")
+	rb.Matcher(func(r *http.Request) bool {
+		return r.ContentLength > 0
+	})
+	_ = rb.Register()
+
+	req, _ := http.NewRequest("GET", "/users?offset=2", strings.NewReader("hello"))
+	req.Host = "domain.com"
+	req.URL.Scheme = "https"
+	req.Header.Set("X-dummy", "dummy")
+	res := httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assertEqual(t, 200, res.Code)
+
+	req, _ = http.NewRequest("GET", "/users?offset=1", strings.NewReader("hello"))
+	req.Host = "domain.com"
+	req.URL.Scheme = "https"
+	req.Header.Set("X-dummy", "dummy")
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assertEqual(t, 404, res.Code)
+
+	req, _ = http.NewRequest("GET", "/users?offset=2", strings.NewReader("hello"))
+	req.Host = "domain2.com"
+	req.URL.Scheme = "https"
+	req.Header.Set("X-dummy", "dummy")
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assertEqual(t, 404, res.Code)
+
+	req, _ = http.NewRequest("GET", "/users?offset=2", strings.NewReader("hello"))
+	req.Host = "domain.com"
+	req.URL.Scheme = "http"
+	req.Header.Set("X-dummy", "dummy")
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assertEqual(t, 404, res.Code)
+
+	req, _ = http.NewRequest("GET", "/users?offset=2", strings.NewReader("hello"))
+	req.Host = "domain.com"
+	req.URL.Scheme = "https"
+	req.Header.Set("X-dummy", "dummy2")
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assertEqual(t, 404, res.Code)
+
+	req, _ = http.NewRequest("GET", "/users?offset=2", nil)
+	req.Host = "domain.com"
+	req.URL.Scheme = "https"
+	req.Header.Set("X-dummy", "dummy")
+	res = httptest.NewRecorder()
+	mainRouter.ServeHTTP(res, req)
+
+	assertEqual(t, 404, res.Code)
+
+	url, _ := mainRouter.GenerateURL("users", newURLParameterBag(0))
+	assertStringEqual(t, "/users", url)
+
+}
+
+func TestRouter_NewRoute_RegisterReturnsErrorIfIncompleteRouteDefined(t *testing.T) {
+	mainRouter := Router{}
+
+	err := mainRouter.NewRoute().Register()
+	assertNotNil(t, err)
+
+	err = mainRouter.NewRoute().Method("GET").Register()
+	assertNotNil(t, err)
+
+	err = mainRouter.NewRoute().Method("GET").Path("/some").Register()
+	assertNotNil(t, err)
+
+	err = mainRouter.NewRoute().Method("GET").Path("/some").Handler(func(writer http.ResponseWriter, request *http.Request) {
+
+	}).Register()
+	assertNil(t, err)
+
+}
+
 func assertRouteIsGenerated(t *testing.T, mainRouter Router, name, url string, params map[string]string) {
 	bag := URLParameterBag{}
 	for key, value := range params {
@@ -965,7 +1058,7 @@ func TestRouter_Load_RegisterRoutes(t *testing.T) {
 			Path:    "/users",
 			Handler: "users.Handler",
 			Options: RouteDefOptions{
-				Name: "get.users",
+				Name:          "get.users",
 				CustomMatcher: "true.CustomMatcher",
 			},
 		},
@@ -987,7 +1080,7 @@ func TestRouter_Load_FailsWhenCustomMatcherDoesNotExist(t *testing.T) {
 			Path:    "/users",
 			Handler: "users.Handler",
 			Options: RouteDefOptions{
-				Name: "get.users",
+				Name:          "get.users",
 				CustomMatcher: "notExists.CustomMatcher",
 			},
 		},

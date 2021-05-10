@@ -15,7 +15,7 @@ func TestNewMiddlewarePipe_ReturnsEmptyPipe(t *testing.T) {
 func TestMiddlewarePipe_Next(t *testing.T) {
 	pipe := NewMiddlewarePipe()
 	pipe.Next(
-		func(handlerFunc http.HandlerFunc, ) http.HandlerFunc {
+		func(handlerFunc http.HandlerFunc) http.HandlerFunc {
 			return handlerFunc
 		},
 		func(handlerFunc http.HandlerFunc) http.HandlerFunc {
@@ -26,11 +26,10 @@ func TestMiddlewarePipe_Next(t *testing.T) {
 	assertEqual(t, 2, len(pipe.middlewares))
 }
 
-
 func TestMiddlewarePipe_Pipe(t *testing.T) {
 	pipe := NewMiddlewarePipe()
 	pipe.Next(
-		func(handlerFunc http.HandlerFunc, ) http.HandlerFunc {
+		func(handlerFunc http.HandlerFunc) http.HandlerFunc {
 			return handlerFunc
 		},
 		func(handlerFunc http.HandlerFunc) http.HandlerFunc {
@@ -40,7 +39,7 @@ func TestMiddlewarePipe_Pipe(t *testing.T) {
 
 	pipe2 := NewMiddlewarePipe()
 	pipe2.Next(
-		func(handlerFunc http.HandlerFunc, ) http.HandlerFunc {
+		func(handlerFunc http.HandlerFunc) http.HandlerFunc {
 			return handlerFunc
 		},
 	)
@@ -71,7 +70,7 @@ func TestMiddlewarePipe_Then(t *testing.T) {
 	handler(response, request)
 
 	assertEqual(t, http.StatusAccepted, response.Code)
-	assertStringEqual(t, "application/json",response.Header().Get("Content-Type"))
-	assertStringEqual(t, "https://test.com",response.Header().Get("Access-Control-Allow-Origin"))
+	assertStringEqual(t, "application/json", response.Header().Get("Content-Type"))
+	assertStringEqual(t, "https://test.com", response.Header().Get("Access-Control-Allow-Origin"))
 
 }

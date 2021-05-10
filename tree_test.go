@@ -269,7 +269,7 @@ func TestTree_OptimizeByWeight_PrioritisesHeavierPathsAllStatic(t *testing.T) {
 	assertNodeStatic(t, tree.root.child.sibling.child.sibling.sibling.child, "/", false, tree.root.child.sibling.child.sibling.sibling)
 	assertNodeStatic(t, tree.root.child.sibling.child.sibling.sibling.child.child, "name", true, tree.root.child.sibling.child.sibling.sibling.child)
 	assertNodeStatic(t, tree.root.child.sibling.child.sibling.sibling.child.child.sibling, "phone", true, tree.root.child.sibling.child.sibling.sibling.child)
-	assertNodeDynamic(t, tree.root.child.sibling.child.sibling.sibling.child.child.sibling.sibling, "name", "^[a-z]+$",false, tree.root.child.sibling.child.sibling.sibling.child.child.sibling.parent)
+	assertNodeDynamic(t, tree.root.child.sibling.child.sibling.sibling.child.child.sibling.sibling, "name", "^[a-z]+$", false, tree.root.child.sibling.child.sibling.sibling.child.child.sibling.parent)
 
 	_ = calcWeight(tree.root)
 	tree.root = sortByWeight(tree.root)
