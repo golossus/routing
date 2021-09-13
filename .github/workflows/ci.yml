@@ -1,0 +1,51 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+
+  build:
+    name: ci-build
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        go:
+          - '1.17'
+          - '1.16'
+          - '1.15'
+          - '1.14'
+          - '1.13'
+          - '1.12'
+          - '1.11'
+          - '1.10'
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      - name: Set up Go runtime
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v2
+
+      - name: Test
+        run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Send coverage metrics to Codecov
+        if: ${{ matrix.go == '1.17' }}
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.txt
+          flags: unittests
+          fail_ci_if_error: false
+

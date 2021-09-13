@@ -265,11 +265,11 @@ func (r *Router) Register(verb, path string, handler http.HandlerFunc, options .
 	r.routes[rname] = leaf
 
 	if r.config.EnableAutoMethodHead && verb == http.MethodGet {
-		err = r.Register(http.MethodHead, path, handler, options...)
+		_ = r.Register(http.MethodHead, path, handler, options...)
 	}
 
 	if r.config.EnableAutoMethodOptions && verb != http.MethodOptions {
-		err = r.Register(http.MethodOptions, path, getAutoMethodOptionsHandler(r), options...)
+		_ = r.Register(http.MethodOptions, path, getAutoMethodOptionsHandler(r), options...)
 	}
 
 	return nil

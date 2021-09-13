@@ -191,7 +191,7 @@ func BenchmarkRouter_GenerateURL(b *testing.B) {
 	paramsKey.add("id", "2")
 	paramsKey.add("name", "john")
 	for i := 0; i < b.N; i++ {
-		mainRouter.GenerateURL("path1.id.name", paramsKey)
+		_, _ = mainRouter.GenerateURL("path1.id.name", paramsKey)
 	}
 }
 
@@ -202,7 +202,7 @@ func benchRouter(b *testing.B, prioritizeByWeight bool) {
 	before := m.HeapAlloc
 	handler := func(response http.ResponseWriter, request *http.Request) {}
 	for _, routes := range testRoutes {
-		router.Register(http.MethodGet, routes, handler)
+		_ = router.Register(http.MethodGet, routes, handler)
 	}
 	if prioritizeByWeight {
 		router.PrioritizeByWeight()
