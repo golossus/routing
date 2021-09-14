@@ -1,6 +1,9 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/golossus/routing)](https://goreportcard.com/report/github.com/golossus/routing) 
-[![Build Status](https://travis-ci.com/golossus/routing.svg?branch=master)](https://travis-ci.com/golossus/routing)
+![ci workflow](https://github.com/golossus/routing/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/golossus/routing/branch/master/graph/badge.svg?token=R4RDS0JM4X)](https://codecov.io/gh/golossus/routing)
+[![Go Report Card](https://goreportcard.com/badge/github.com/golossus/routing)](https://goreportcard.com/report/github.com/golossus/routing)
+[![CodeFactor](https://www.codefactor.io/repository/github/golossus/routing/badge)](https://www.codefactor.io/repository/github/golossus/routing)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=golossus_routing&metric=alert_status)](https://sonarcloud.io/dashboard?id=golossus_routing)
+
 
 <p align="center">
     <a href="https://www.golossus.com" target="_blank">
